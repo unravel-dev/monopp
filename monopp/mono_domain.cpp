@@ -60,7 +60,10 @@ void mono_domain::set_current_domain(const mono_domain* domain)
 	else
 	{
 		auto root_domain = mono_get_root_domain();
-		mono_domain_set(root_domain, 0);
+		if(root_domain)
+		{
+			mono_domain_set(root_domain, 0);
+		}
 	}
 }
 
