@@ -24,6 +24,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
       with:
+        token: ${{ secrets.pat }}
         submodules: true
     - name: Build
       run: |
