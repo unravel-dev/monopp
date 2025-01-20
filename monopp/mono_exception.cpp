@@ -3,6 +3,9 @@
 #include "mono_property_invoker.h"
 #include "mono_type.h"
 
+#include <regex>
+#include <sstream>
+
 BEGIN_MONO_INCLUDE
 #include <mono/metadata/exception.h>
 END_MONO_INCLUDE
@@ -66,6 +69,39 @@ void raise_exception(const std::string& name_space, const std::string& class_nam
 
 	// Raise the exception in the managed runtime
 	mono_raise_exception(exception);
+}
+
+auto extract_relevant_stack_frame(const std::string& input) -> stack_frame_info
+{
+	// Regex to capture:
+	//   1) the file path ending with `.cs`
+	//   2) the line number after the colon
+	// Explanation of the pattern:
+	//   ([^\s]+\.cs)  -> matches non-whitespace until ".cs"
+	//   :(\d+)        -> a literal colon, then one or more digits
+	std::regex cs_regex(R"(([^\s]+\.cs):(\d+))");
+	std::smatch match;
+
+	std::istringstream iss(input);
+	std::string line;
+
+	// We'll store the first file/line match we find and then stop.
+	stack_frame_info result{};
+
+	while(std::getline(iss, line))
+	{
+		if(std::regex_search(line, match, cs_regex))
+		{
+			// match[1] is the .cs file path, match[2] is the line number
+			result.file_name = match[1].str();
+			result.line = std::stoi(match[2].str());
+			// Since we want the FIRST occurrence (topmost),
+			// we break immediately after finding it.
+			break;
+		}
+	}
+
+	return result;
 }
 
 } // namespace mono

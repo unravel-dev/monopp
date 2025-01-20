@@ -43,4 +43,13 @@ private:
 
 void raise_exception(const std::string& name_space, const std::string& class_name, const std::string& message);
 
+struct stack_frame_info
+{
+	std::string function_name{};
+	std::string file_name{};
+	int line{};
+};
+
+auto extract_relevant_stack_frame(const std::string& input) -> stack_frame_info;
+
 } // namespace mono
