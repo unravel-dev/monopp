@@ -63,6 +63,12 @@ mono_method::mono_method(const mono_type& type, const std::string& name, int arg
 	generate_meta();
 }
 
+auto mono_method::get_internal_ptr() const -> MonoMethod*
+{
+	return method_;
+}
+
+
 void mono_method::generate_meta()
 {
 #ifndef NDEBUG

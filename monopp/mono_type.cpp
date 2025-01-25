@@ -104,6 +104,11 @@ auto mono_type::valid() const -> bool
 auto mono_type::new_instance() const -> mono_object
 {
 	const auto& domain = mono_domain::get_current_domain();
+	return new_instance(domain);
+}
+
+auto mono_type::new_instance(const mono_domain& domain) const -> mono_object
+{
 	return mono_object(domain, *this);
 }
 

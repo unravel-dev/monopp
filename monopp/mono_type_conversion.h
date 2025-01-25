@@ -3,6 +3,7 @@
 #include "mono_config.h"
 
 #include "mono_array.h"
+#include "mono_list.h"
 #include "mono_domain.h"
 #include "mono_string.h"
 #include "mono_type.h"
@@ -187,5 +188,50 @@ struct mono_converter<mono_array<T>>
 		return mono_array<T>(mono_object(obj));
 	}
 };
+
+
+template <typename T>
+struct mono_converter<std::list<T>>
+{
+	using native_type = std::list<T>;
+	using managed_type = MonoObject*;
+
+	static auto to_mono(const native_type& obj) -> managed_type
+	{
+		const auto& domain = mono_domain::get_current_domain();
+		return mono_list<T>(domain, obj).get_internal_ptr();
+	}
+
+	static auto from_mono(const managed_type& obj) -> native_type
+	{
+		if(!obj)
+		{
+			return {};
+		}
+		return mono_list<T>(mono_object(obj)).to_list();
+	}
+};
+
+template <typename T>
+struct mono_converter<mono_list<T>>
+{
+	using native_type = mono_list<T>;
+	using managed_type = MonoObject*;
+
+	static auto to_mono(const native_type& obj) -> managed_type
+	{
+		return obj.get_internal_ptr();
+	}
+
+	static auto from_mono(const managed_type& obj) -> native_type
+	{
+		if(!obj)
+		{
+			return {};
+		}
+		return mono_list<T>(mono_object(obj));
+	}
+};
+
 
 } // namespace mono

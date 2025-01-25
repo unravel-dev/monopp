@@ -43,6 +43,9 @@ public:
 
 	auto valid() const -> bool;
 	operator bool() const;
+
+	auto get_internal_ptr() const -> MonoMethod*;
+
 protected:
 	void generate_meta();
 

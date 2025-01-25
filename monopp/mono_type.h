@@ -17,6 +17,7 @@ class mono_method;
 class mono_field;
 class mono_property;
 class mono_object;
+class mono_domain;
 
 class mono_type
 {
@@ -31,6 +32,7 @@ public:
 	auto valid() const -> bool;
 
 	auto new_instance() const -> mono_object;
+	auto new_instance(const mono_domain& domain) const -> mono_object;
 
 	auto get_method(const std::string& name_with_args) const -> mono_method;
 
