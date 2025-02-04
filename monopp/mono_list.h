@@ -48,7 +48,7 @@ public:
 
 protected:
 	// Helper: invoke a method on 'this' object by name (naive approach)
-	auto invoke_method(const char* methodName, void** params, int paramCount, MonoObject** exc) const
+	auto invoke_method(const char* methodName, void** params, int /*paramCount*/, MonoObject** exc) const
 		-> MonoObject*
 	{
 		if(!object_)
