@@ -32,10 +32,31 @@ public:
 		return mono_array_length(get_internal_array());
 	}
 
+	auto get_element_type() const -> mono_type
+	{
+		return mono_type(get_element_type(get_internal_array()));
+	}
+
+	virtual auto get_object(size_t index) const -> mono_object = 0;
+
 protected:
 	auto get_internal_array() const -> MonoArray*
 	{
 		return reinterpret_cast<MonoArray*>(object_);
+	}
+
+	static MonoClass* get_element_type(MonoArray* array)
+	{
+		if(!array)
+			return nullptr; // Safety check
+
+		// Get the MonoClass* of the array itself
+		MonoClass* arrayClass = mono_object_get_class((MonoObject*)array);
+
+		// Get the element type class
+		MonoClass* elementType = mono_class_get_element_class(arrayClass);
+
+		return elementType; // This is the class of the elements inside the array
 	}
 };
 
@@ -47,12 +68,19 @@ public:
 
 	static_assert(is_mono_valuetype<T>::value, "Specialize mono_array for non-value types");
 
-	auto craete_array(const mono_domain& domain, const std::vector<T>& vec) -> MonoArray*
+	auto craete_array(const mono_domain& domain, const std::vector<T>& vec, const mono_type& element_type)
+		-> MonoArray*
 	{
-		auto type = mono_class_from_type();
-		if(type)
+		auto element_type_ = element_type.get_internal_ptr();
+
+		if(!element_type_)
 		{
-			return mono_array_new(domain.get_internal_ptr(), type, vec.size());
+			element_type_ = mono_class_from_type();
+		}
+
+		if(element_type_)
+		{
+			return mono_array_new(domain.get_internal_ptr(), element_type_, vec.size());
 		}
 		else
 		{
@@ -63,7 +91,16 @@ public:
 
 	// Construct a new MonoArray from a std::vector of trivial types
 	mono_array(const mono_domain& domain, const std::vector<T>& vec)
-		: mono_array_base(craete_array(domain, vec))
+		: mono_array_base(craete_array(domain, vec, {}))
+	{
+		for(size_t i = 0; i < vec.size(); ++i)
+		{
+			set(i, vec[i]);
+		}
+	}
+
+	mono_array(const mono_domain& domain, const std::vector<T>& vec, const mono_type& element_type)
+		: mono_array_base(craete_array(domain, vec, element_type))
 	{
 		for(size_t i = 0; i < vec.size(); ++i)
 		{
@@ -88,6 +125,22 @@ public:
 			// Directly retrieve primitive types
 			return mono_array_get(get_internal_array(), T, index);
 		}
+	}
+
+	auto get_object(size_t index) const -> mono_object
+	{
+		MonoObject* object = nullptr;
+		auto type = get_element_type();
+		if(type.is_valuetype())
+		{
+			auto val = get(index);
+			object = mono_value_box(mono_object_get_domain(object_), type.get_internal_ptr(), &val);
+		}
+		else
+		{
+			object = mono_array_get(get_internal_array(), MonoObject*, index);
+		}
+		return mono_object(object);
 	}
 
 	// Set element at index for trivial types
@@ -203,6 +256,11 @@ public:
 	{
 		MonoObject* obj = mono_array_get(get_internal_array(), MonoObject*, index);
 		return mono_object(obj);
+	}
+
+	auto get_object(size_t index) const -> mono_object
+	{
+		return get(index);
 	}
 
 	// Set element at index for primitive types
