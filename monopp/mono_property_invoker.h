@@ -10,6 +10,8 @@ template <typename T>
 class mono_property_invoker : public mono_property
 {
 public:
+	using value_type = T;
+
 	void set_value(const T& val) const;
 
 	void set_value(const mono_object& obj, const T& val) const;

@@ -3,10 +3,10 @@
 #include "mono_config.h"
 
 BEGIN_MONO_INCLUDE
+#include "mono/metadata/appdomain.h"
 #include <mono/metadata/class.h>
 #include <mono/metadata/image.h>
 #include <mono/metadata/reflection.h>
-#include "mono/metadata/appdomain.h"
 END_MONO_INCLUDE
 
 namespace mono
@@ -72,6 +72,11 @@ public:
 
 	auto is_enum() const -> bool;
 
+	auto get_enum_base_type() const -> mono_type;
+
+	template<typename T>
+	auto get_enum_values() const -> std::vector<std::pair<T, std::string>>;
+
 	auto get_rank() const -> int;
 
 	auto get_sizeof() const -> std::uint32_t;
@@ -105,7 +110,6 @@ private:
 	};
 	std::shared_ptr<meta_info> meta_{};
 #endif
-
 };
 
 } // namespace mono
