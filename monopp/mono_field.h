@@ -32,9 +32,13 @@ public:
 
 	auto get_attributes() const -> std::vector<mono_object>;
 
+	auto has_attribute(const std::string& attribute_full_name) const -> bool;
+
 	auto is_readonly() const -> bool;
 
 	auto is_const() const -> bool;
+
+	auto is_backing_field() const -> bool;
 
 protected:
 	void generate_meta();

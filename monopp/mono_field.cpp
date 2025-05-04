@@ -144,4 +144,33 @@ auto mono_field::is_const() const -> bool
 	uint32_t flags = mono_field_get_flags(field_);
 	return (flags & MONO_FIELD_ATTR_LITERAL) != 0;
 }
+
+auto mono_field::has_attribute(const std::string& attribute_full_name) const -> bool
+{
+	// Iterate over all custom‐attribute instances on this field:
+	for (auto& attr_obj : get_attributes())
+	{
+		if(attribute_full_name == attr_obj.get_type().get_fullname())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+auto mono_field::is_backing_field() const -> bool
+{
+	// 2) auto-property backing fields are tagged [CompilerGenerated]
+	if(has_attribute("System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
+		return true;
+
+	auto name = get_name();
+	// 3) they also always have the exact pattern <X>k__BackingField
+	//    you can optionally double-check:
+	if(name.size() > 0 && name.front() == '<' && name.find(">k__BackingField") != std::string::npos)
+		return true;
+
+	return false;
+}
 } // namespace mono
