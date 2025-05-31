@@ -10,7 +10,7 @@
 
 #include <tuple>
 #include <utility>
-#include <vector>
+#include <array>
 
 namespace mono
 {
@@ -93,7 +93,8 @@ private:
 
 		auto inv = [method, object](auto... args)
 		{
-			std::vector<void*> argsv = {to_mono_arg(args)...};
+			constexpr size_t N = sizeof...(args);
+			std::array<void*, N> argsv = {to_mono_arg(args)...};
 
 			MonoObject* ex = nullptr;
 			mono_runtime_invoke(method, object, argsv.data(), &ex);
@@ -143,7 +144,8 @@ private:
 		auto tup = std::make_tuple(mono_converter<std::decay_t<Args>>::to_mono(std::forward<Args>(args))...);
 		auto inv = [method, object](auto... args)
 		{
-			std::vector<void*> argsv = {to_mono_arg(args)...};
+			constexpr size_t N = sizeof...(args);
+			std::array<void*, N> argsv = {to_mono_arg(args)...};
 
 			MonoObject* ex = nullptr;
 			auto result = mono_runtime_invoke(method, object, argsv.data(), &ex);
@@ -184,12 +186,11 @@ auto make_method_invoker(const mono_type& type, const std::string& name) -> mono
 {
 	using arg_types = typename function_traits<Signature>::arg_types;
 	auto args_result = types::get_args_signature<arg_types>();
-	auto args = args_result.first;
 	auto all_types_known = args_result.second;
 
 	if(all_types_known)
 	{
-		auto func = type.get_method(name + "(" + args + ")");
+		auto func = type.get_method(name + "(" + args_result.first + ")");
 		return make_method_invoker<Signature>(func);
 	}
 	else

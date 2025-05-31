@@ -62,6 +62,8 @@ public:
 
 	auto get_name() const -> std::string;
 
+	auto get_hash() const -> size_t;
+
 	auto get_fullname() const -> std::string;
 
 	auto is_valuetype() const -> bool;
@@ -89,6 +91,9 @@ public:
 
 	auto get_internal_ptr() const -> MonoClass*;
 
+	static auto get_hash(const std::string& name) -> size_t;
+	static auto get_hash(const char* name) -> size_t;
+
 private:
 	auto get_name(bool full) const -> std::string;
 
@@ -96,7 +101,7 @@ private:
 
 	non_owning_ptr<MonoClass> class_ = nullptr;
 
-#ifndef NDEBUG
+#if MONOPP_DEBUG_LEVEL > 0
 	struct meta_info
 	{
 		std::string name_space;

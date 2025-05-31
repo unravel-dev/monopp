@@ -51,7 +51,7 @@ protected:
 
 	non_owning_ptr<MonoVTable> owning_type_vtable_ = nullptr;
 
-#ifndef NDEBUG
+#if MONOPP_DEBUG_LEVEL > 0
 	struct meta_info
 	{
 		std::string name;

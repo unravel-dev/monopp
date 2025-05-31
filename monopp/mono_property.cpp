@@ -108,7 +108,7 @@ auto mono_property::is_readonly() const -> bool
 
 void mono_property::generate_meta()
 {
-#ifndef NDEBUG
+#if MONOPP_DEBUG_LEVEL > 0
 	meta_ = std::make_shared<meta_info>();
 	meta_->name = get_name();
 	meta_->fullname = get_fullname();

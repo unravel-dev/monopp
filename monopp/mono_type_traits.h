@@ -151,7 +151,7 @@ void for_each(Tuple&& tuple, F&& f)
 template <class T>
 struct tag_t
 {
-	constexpr tag_t(){};
+	constexpr tag_t() {};
 	using type = T;
 };
 template <class T>
@@ -227,14 +227,15 @@ inline auto get_types() -> const std::map<index_t, type_names_t>&
 }
 
 template <typename T>
-inline auto get_name(bool& found) -> type_names_t
+inline auto get_name(bool& found) -> const type_names_t&
 {
 	const auto& types = get_types();
 	auto it = types.find(id<std::decay_t<T>>());
 	if(it == types.end())
 	{
 		found |= false;
-		return {"unknown", "Unknown"};
+		static const type_names_t empty{"unknown", "Unknown"};
+		return empty;
 	}
 	found |= true;
 	return it->second;
@@ -243,7 +244,6 @@ inline auto get_name(bool& found) -> type_names_t
 template <typename Tuple>
 inline auto get_args_signature() -> std::pair<std::string, bool>
 {
-
 	bool all_types_known = false;
 
 	size_t i = 0;
@@ -253,12 +253,17 @@ inline auto get_args_signature() -> std::pair<std::string, bool>
 		{
 			using arg_t = typename std::decay_t<decltype(tag)>::type;
 
-			if(i++ > 0)
-			{
-				result += ',';
-			}
+			const auto& name = types::get_name<arg_t>(all_types_known).name;
 
-			result += types::get_name<arg_t>(all_types_known).name;
+			if(all_types_known && !name.empty())
+			{
+				if(i++ > 0)
+				{
+					result += ',';
+				}
+
+				result += name;
+			}
 		});
 
 	return std::make_pair(result, all_types_known);
@@ -269,7 +274,7 @@ auto is_compatible_type(const std::string& expected_name) -> bool
 {
 	bool found = false;
 
-	auto name = types::get_name<T>(found).fullname;
+	const auto& name = types::get_name<T>(found).fullname;
 
 	if(found)
 	{

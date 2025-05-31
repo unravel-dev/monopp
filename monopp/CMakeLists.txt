@@ -33,6 +33,8 @@ set_target_properties(${target_name} PROPERTIES
 	WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
+target_compile_definitions(${target_name} PUBLIC MONOPP_DEBUG_LEVEL=0)
+
 include(target_warning_support)
 set_warning_level(${target_name} ultra)
 

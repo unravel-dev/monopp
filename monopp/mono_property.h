@@ -52,7 +52,7 @@ private:
 
 	non_owning_ptr<MonoProperty> property_ = nullptr;
 
-#ifndef NDEBUG
+#if MONOPP_DEBUG_LEVEL > 0
 	struct meta_info
 	{
 		std::string name;

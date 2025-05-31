@@ -34,7 +34,7 @@ mono_field::mono_field(const mono_type& type, const std::string& name)
 
 void mono_field::generate_meta()
 {
-#ifndef NDEBUG
+#if MONOPP_DEBUG_LEVEL > 0
 	meta_ = std::make_shared<meta_info>();
 
 	meta_->name = get_name();
