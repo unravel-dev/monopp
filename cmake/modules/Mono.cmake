@@ -75,5 +75,27 @@ if (WIN32)
         copy_files_to_runtime_path(FILES ${MONO_DLL_PATH})
 
     endif()
+
+elseif(UNIX)
+    if(MONO_BINARY_PATCH_PATH)
+        unset(MONO_DLL_PATH)
+        file(GLOB_RECURSE MONO_DLL_PATH ${MONO_BINARY_PATCH_PATH}/*.so)
+        copy_files_to_runtime_path(FILES ${MONO_DLL_PATH})
+
+        # Create .so.1 symlinks for each .so file
+       foreach(_mono_so IN LISTS MONO_DLL_PATH)
+           get_filename_component(_so_name "${_mono_so}" NAME)
+           get_filename_component(_so_dir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" ABSOLUTE)
+           set(_dst_so "${_so_dir}/${_so_name}")
+           set(_dst_so1 "${_dst_so}.1")
+
+           # Only create symlink if target exists and symlink doesn't already
+           if(EXISTS "${_dst_so}" AND NOT EXISTS "${_dst_so1}")
+               file(CREATE_LINK "${_so_name}" "${_dst_so1}" SYMBOLIC)
+               message(STATUS "Created symlink: ${_dst_so1} -> ${_so_name}")
+           endif()
+       endforeach()
+    endif()
+
 endif ()
 

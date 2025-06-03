@@ -19,7 +19,7 @@ add_library(${target_name} ${libsrc})
 
 target_include_directories(${target_name}
     PUBLIC
-		${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
         ${MONO_INCLUDE_PATH}
         ${CMAKE_CURRENT_BINARY_DIR}
 )
@@ -30,7 +30,7 @@ set_target_properties(${target_name} PROPERTIES
     CXX_STANDARD 14
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
-	WINDOWS_EXPORT_ALL_SYMBOLS ON
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
 target_compile_definitions(${target_name} PUBLIC MONOPP_DEBUG_LEVEL=0)
