@@ -6,8 +6,8 @@
 BEGIN_MONO_INCLUDE
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
-#include <mono/metadata/mono-debug.h>
 #include <mono/metadata/mono-config.h>
+#include <mono/metadata/mono-debug.h>
 #include <mono/metadata/threads.h>
 #include <mono/utils/mono-logger.h>
 #include <mono_build_config.h>
@@ -71,7 +71,7 @@ void mono_set_env_var(const char* var_name, const char* value)
 #endif
 }
 #endif
-}
+} // namespace
 
 auto mono_assembly_dir() -> std::string
 {
@@ -99,26 +99,17 @@ auto get_common_library_names() -> const std::vector<std::string>&
 }
 auto get_common_library_paths() -> const std::vector<std::string>&
 {
-	static const std::vector<std::string> paths{"C:/Program Files/Mono/lib",
-												"/usr/lib64",
-												"/usr/lib",
-												"/usr/local/lib64",
-												"/usr/local/lib"};
+	static const std::vector<std::string> paths{"C:/Program Files/Mono/lib", "/usr/lib64", "/usr/lib",
+												"/usr/local/lib64", "/usr/local/lib"};
 	return paths;
 }
-
 
 auto get_common_config_paths() -> const std::vector<std::string>&
 {
-	static const std::vector<std::string> paths{"C:/Program Files/Mono/etc",
-												"/etc",
-												"/etc",
-												"/usr/local/etc",
+	static const std::vector<std::string> paths{"C:/Program Files/Mono/etc", "/etc", "/etc", "/usr/local/etc",
 												"/usr/local/etc"};
 	return paths;
 }
-
-
 
 auto get_common_executable_names() -> const std::vector<std::string>&
 {
@@ -133,16 +124,10 @@ auto get_common_executable_names() -> const std::vector<std::string>&
 }
 auto get_common_executable_paths() -> const std::vector<std::string>&
 {
-	static const std::vector<std::string> paths{
-		"C:/Program Files/Mono/bin",
-		"/usr/bin",
-		"/usr/bin",
-		"/usr/local/bin",
-		"/usr/local/bin"
-	};
+	static const std::vector<std::string> paths{"C:/Program Files/Mono/bin", "/usr/bin", "/usr/bin",
+												"/usr/local/bin", "/usr/local/bin"};
 	return paths;
 }
-
 
 auto init(const compiler_paths& paths, const debugging_config& debugging) -> bool
 {
@@ -165,7 +150,9 @@ auto init(const compiler_paths& paths, const debugging_config& debugging) -> boo
 
 		// Create the debugger agent string dynamically
 		std::ostringstream debugger_agent;
-		debugger_agent << "--debugger-agent=transport=dt_socket,suspend=n,server=y,address=" << debugging.address << ":" << debugging.port << ",embedding=1,loglevel=" << debugging.loglevel;
+		debugger_agent << "--debugger-agent=transport=dt_socket,suspend=n,server=y,address="
+					   << debugging.address << ":" << debugging.port
+					   << ",embedding=1,loglevel=" << debugging.loglevel;
 
 		// keep string alive as we are passing pointers bellow
 		std::string result = debugger_agent.str();
@@ -204,9 +191,25 @@ auto init(const compiler_paths& paths, const debugging_config& debugging) -> boo
 	set_log_handler("default", [](const std::string& msg) { std::cout << msg << std::endl; });
 
 	jit_domain = mono_jit_init("mono_jit");
+
+	const auto& default_logger = get_log_handler("default");
+	default_logger("mscorlib was loaded from: " + get_core_assembly_path());
+
 	mono_thread_set_main(mono_thread_current());
 
 	return jit_domain != nullptr;
+}
+
+auto get_core_assembly_path() -> std::string
+{
+	MonoImage* corlib = mono_get_corlib();
+	if(!corlib)
+	{
+		return {};
+	}
+
+	std::string corlib_path = mono_image_get_filename(corlib);
+	return corlib_path;
 }
 
 void shutdown()
@@ -222,7 +225,6 @@ void shutdown()
 		delete comp_paths;
 	}
 	comp_paths = nullptr;
-
 }
 
 auto quote(const std::string& word) -> std::string
@@ -233,7 +235,6 @@ auto quote(const std::string& word) -> std::string
 	command.append("\"");
 	return command;
 }
-
 
 auto create_compile_command(const compiler_params& params) -> std::string
 {
@@ -246,37 +247,37 @@ auto create_compile_command(const compiler_params& params) -> std::string
 		command += quote(path);
 	}
 
-    if(!params.output_type.empty())
-    {
-        command += " -target:";
-        command += params.output_type;
-    }
+	if(!params.output_type.empty())
+	{
+		command += " -target:";
+		command += params.output_type;
+	}
 
-    if(!params.references.empty())
-    {
-        command += " -reference:";
+	if(!params.references.empty())
+	{
+		command += " -reference:";
 
-        for(const auto& ref : params.references)
-        {
-            command += ref;
-            command += ",";
-        }
+		for(const auto& ref : params.references)
+		{
+			command += ref;
+			command += ",";
+		}
 
-        command.pop_back();
-    }
+		command.pop_back();
+	}
 
-    if(!params.references_locations.empty())
-    {
-        command += " -lib:";
+	if(!params.references_locations.empty())
+	{
+		command += " -lib:";
 
-        for(const auto& loc : params.references_locations)
-        {
-            command += loc;
-            command += ",";
-        }
+		for(const auto& loc : params.references_locations)
+		{
+			command += loc;
+			command += ",";
+		}
 
-        command.pop_back();
-    }
+		command.pop_back();
+	}
 
 	if(!params.output_doc_name.empty())
 	{
@@ -304,7 +305,7 @@ auto create_compile_command(const compiler_params& params) -> std::string
 #ifdef _WIN32
 	command = quote(command);
 #endif
-    return command;
+	return command;
 }
 
 auto create_compile_command_detailed(const compiler_params& params) -> compile_cmd
@@ -314,9 +315,8 @@ auto create_compile_command_detailed(const compiler_params& params) -> compile_c
 
 	for(const auto& path : params.files)
 	{
-		//cmd.args.emplace_back(quote(path));
+		// cmd.args.emplace_back(quote(path));
 		cmd.args.emplace_back(path);
-
 	}
 
 	if(!params.output_type.empty())
@@ -335,7 +335,7 @@ auto create_compile_command_detailed(const compiler_params& params) -> compile_c
 
 		for(const auto& ref : params.references)
 		{
-			//arg += quote(ref);
+			// arg += quote(ref);
 			arg += ref;
 
 			arg += ",";
@@ -352,7 +352,7 @@ auto create_compile_command_detailed(const compiler_params& params) -> compile_c
 
 		for(const auto& loc : params.references_locations)
 		{
-			//arg += quote(loc);
+			// arg += quote(loc);
 			arg += loc;
 
 			arg += ",";
@@ -370,9 +370,6 @@ auto create_compile_command_detailed(const compiler_params& params) -> compile_c
 	if(params.debug)
 	{
 		cmd.args.emplace_back("-debug");
-
-
-
 	}
 	else
 	{
@@ -388,11 +385,10 @@ auto create_compile_command_detailed(const compiler_params& params) -> compile_c
 		std::string arg;
 
 		arg += "-out:";
-		//arg += quote(params.output_name);
+		// arg += quote(params.output_name);
 		arg += params.output_name;
 
 		cmd.args.emplace_back(arg);
-
 	}
 
 	return cmd;
@@ -401,7 +397,7 @@ auto create_compile_command_detailed(const compiler_params& params) -> compile_c
 auto compile(const compiler_params& params) -> bool
 {
 	auto command = create_compile_command(params);
-    std::cout << command << std::endl;
+	std::cout << command << std::endl;
 	return std::system(command.c_str()) == 0;
 }
 

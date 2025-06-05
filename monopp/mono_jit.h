@@ -23,7 +23,7 @@ struct debugging_config
 };
 
 auto init(const compiler_paths& paths = {}, const debugging_config& debugging = {}) -> bool;
-
+auto get_core_assembly_path() -> std::string;
 void shutdown();
 
 struct compiler_params

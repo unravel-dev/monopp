@@ -67,7 +67,10 @@ endfunction()
 
 if (WIN32)
     find_file(MONO_DLL_PATH NAMES mono-2.0.dll mono-2.0-sgen.dll PATHS ${MONO_BINARY_PATH})
+    find_file(MONO_DLL_POSIX_HELPER NAMES MonoPosixHelper.dll PATHS ${MONO_BINARY_PATH})
+
     copy_files_to_runtime_path(FILES ${MONO_DLL_PATH})
+    copy_files_to_runtime_path(FILES ${MONO_DLL_POSIX_HELPER})
 
     if(MONO_BINARY_PATCH_PATH)
         unset(MONO_DLL_PATH)
