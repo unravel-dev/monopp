@@ -15,7 +15,10 @@ using non_owning_ptr = T*;
 
 #define DIAG_STR(s) #s
 #define DIAG_JOINSTR(x, y) DIAG_STR(x##y)
-#ifdef _MSC_VER
+#if defined(__clang__)
+#define DIAG_DO_PRAGMA(x) _Pragma(#x)
+#define DIAG_PRAGMA(compiler, x) DIAG_DO_PRAGMA(compiler diagnostic x)
+#elif defined(_MSC_VER)
 #define DIAG_DO_PRAGMA(x) __pragma(x)
 #define DIAG_PRAGMA(compiler, x) DIAG_DO_PRAGMA(warning(x))
 #else
