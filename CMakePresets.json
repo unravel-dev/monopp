@@ -11,7 +11,7 @@
         {
             "name": "ninja-base",
             "hidden": true,
-            "generator": "Ninja Multi-Config",
+            "generator": "Ninja",
             "binaryDir": "${sourceDir}/develop/build/${presetName}",
             "installDir": "${sourceDir}/develop/install/${presetName}",
             "cacheVariables": {
@@ -29,11 +29,19 @@
             }
         },
         {
-            "name": "linux-clang-10",
+            "name": "linux-clang-12",
             "inherits": "linux-base",
             "cacheVariables": {
-                "CMAKE_C_COMPILER": "clang-10",
-                "CMAKE_CXX_COMPILER": "clang++-10"
+                "CMAKE_C_COMPILER": "clang-12",
+                "CMAKE_CXX_COMPILER": "clang++-12"
+            }
+        },
+		{
+            "name": "linux-clang-13",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-13",
+                "CMAKE_CXX_COMPILER": "clang++-13"
             }
         },
         {
@@ -44,6 +52,54 @@
                 "CMAKE_CXX_COMPILER": "clang++-14"
             }
         },
+		{
+            "name": "linux-clang-15",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-15",
+                "CMAKE_CXX_COMPILER": "clang++-15"
+            }
+        },
+				{
+            "name": "linux-clang-16",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-16",
+                "CMAKE_CXX_COMPILER": "clang++-16"
+            }
+        },
+				{
+            "name": "linux-clang-17",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-17",
+                "CMAKE_CXX_COMPILER": "clang++-17"
+            }
+        },
+				{
+            "name": "linux-clang-18",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-18",
+                "CMAKE_CXX_COMPILER": "clang++-18"
+            }
+        },
+		{
+            "name": "linux-clang-19",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-19",
+                "CMAKE_CXX_COMPILER": "clang++-19"
+            }
+        },
+		{
+            "name": "linux-clang-20",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-20",
+                "CMAKE_CXX_COMPILER": "clang++-20"
+            }
+        },
         {
             "name": "linux-gcc-10",
             "inherits": "linux-base",
@@ -52,12 +108,36 @@
                 "CMAKE_CXX_COMPILER": "g++-10"
             }
         },
+		 {
+            "name": "linux-gcc-11",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc-11",
+                "CMAKE_CXX_COMPILER": "g++-11"
+            }
+        },
         {
             "name": "linux-gcc-12",
             "inherits": "linux-base",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "gcc-12",
                 "CMAKE_CXX_COMPILER": "g++-12"
+            }
+        },
+		{
+            "name": "linux-gcc-13",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc-13",
+                "CMAKE_CXX_COMPILER": "g++-13"
+            }
+        },
+		{
+            "name": "linux-gcc-14",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc-14",
+                "CMAKE_CXX_COMPILER": "g++-14"
             }
         },
         {
@@ -218,16 +298,26 @@
 
     "buildPresets": [
         {
-            "name": "linux-clang-10-debug",
+            "name": "linux-clang-12-debug",
             "configuration": "Debug",
-            "configurePreset": "linux-clang-10"
+            "configurePreset": "linux-clang-12"
         },
         {
-            "name": "linux-clang-10-release",
+            "name": "linux-clang-12-release",
             "configuration": "Release",
-            "configurePreset": "linux-clang-10"
+            "configurePreset": "linux-clang-12"
+        },
+		{
+            "name": "linux-clang-13-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-clang-13"
         },
         {
+            "name": "linux-clang-13-release",
+            "configuration": "Release",
+            "configurePreset": "linux-clang-13"
+        },
+		{
             "name": "linux-clang-14-debug",
             "configuration": "Debug",
             "configurePreset": "linux-clang-14"
@@ -236,6 +326,66 @@
             "name": "linux-clang-14-release",
             "configuration": "Release",
             "configurePreset": "linux-clang-14"
+        },
+        {
+            "name": "linux-clang-15-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-clang-15"
+        },
+        {
+            "name": "linux-clang-15-release",
+            "configuration": "Release",
+            "configurePreset": "linux-clang-15"
+        },
+		{
+            "name": "linux-clang-16-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-clang-16"
+        },
+        {
+            "name": "linux-clang-16-release",
+            "configuration": "Release",
+            "configurePreset": "linux-clang-16"
+        },
+		{
+            "name": "linux-clang-17-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-clang-17"
+        },
+        {
+            "name": "linux-clang-17-release",
+            "configuration": "Release",
+            "configurePreset": "linux-clang-17"
+        },
+		{
+            "name": "linux-clang-18-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-clang-18"
+        },
+        {
+            "name": "linux-clang-18-release",
+            "configuration": "Release",
+            "configurePreset": "linux-clang-18"
+        },
+		{
+            "name": "linux-clang-19-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-clang-19"
+        },
+        {
+            "name": "linux-clang-19-release",
+            "configuration": "Release",
+            "configurePreset": "linux-clang-19"
+        },
+		{
+            "name": "linux-clang-20-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-clang-20"
+        },
+        {
+            "name": "linux-clang-20-release",
+            "configuration": "Release",
+            "configurePreset": "linux-clang-20"
         },
         {
             "name": "linux-gcc-10-debug",
@@ -247,6 +397,16 @@
             "configuration": "Release",
             "configurePreset": "linux-gcc-10"
         },
+		{
+            "name": "linux-gcc-11-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-gcc-11"
+        },
+        {
+            "name": "linux-gcc-11-release",
+            "configuration": "Release",
+            "configurePreset": "linux-gcc-11"
+        },
         {
             "name": "linux-gcc-12-debug",
             "configuration": "Debug",
@@ -256,6 +416,26 @@
             "name": "linux-gcc-12-release",
             "configuration": "Release",
             "configurePreset": "linux-gcc-12"
+        },
+		{
+            "name": "linux-gcc-13-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-gcc-13"
+        },
+        {
+            "name": "linux-gcc-13-release",
+            "configuration": "Release",
+            "configurePreset": "linux-gcc-13"
+        },
+		{
+            "name": "linux-gcc-14-debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-gcc-14"
+        },
+        {
+            "name": "linux-gcc-14-release",
+            "configuration": "Release",
+            "configurePreset": "linux-gcc-14"
         },
         {
             "name": "macos-arm64-debug",
@@ -364,24 +544,74 @@
             "configuration": "Release"
         },
         {
-            "name": "linux-clang-10-release",
+            "name": "linux-clang-12-release",
             "inherits": "test-base",
-            "configurePreset": "linux-clang-10"
+            "configurePreset": "linux-clang-12"
+        },
+		{
+            "name": "linux-clang-13-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-clang-13"
         },
         {
             "name": "linux-clang-14-release",
             "inherits": "test-base",
             "configurePreset": "linux-clang-14"
         },
+		{
+            "name": "linux-clang-15-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-clang-15"
+        },
+		{
+            "name": "linux-clang-16-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-clang-16"
+        },
+		{
+            "name": "linux-clang-17-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-clang-17"
+        },
+		{
+            "name": "linux-clang-18-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-clang-18"
+        },
+		{
+            "name": "linux-clang-19-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-clang-19"
+        },
+		{
+            "name": "linux-clang-20-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-clang-20"
+        },
         {
             "name": "linux-gcc-10-release",
             "inherits": "test-base",
             "configurePreset": "linux-gcc-10"
         },
+		{
+            "name": "linux-gcc-11-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-gcc-11"
+        },
         {
             "name": "linux-gcc-12-release",
             "inherits": "test-base",
             "configurePreset": "linux-gcc-12"
+        },
+		{
+            "name": "linux-gcc-13-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-gcc-13"
+        },
+		{
+            "name": "linux-gcc-14-release",
+            "inherits": "test-base",
+            "configurePreset": "linux-gcc-14"
         },
         {
             "name": "macos-arm64-release",
