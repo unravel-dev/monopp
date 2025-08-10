@@ -50,7 +50,7 @@ DEALINGS IN THE SOFTWARE.
 template <bool Condition>
 struct StaticAssert
 {
-	static void assert()
+	static void sassert()
 	{
 		int static_assert_impl[(Condition ? 1 : -1)];
 	}
@@ -58,11 +58,11 @@ struct StaticAssert
 template <>
 struct StaticAssert<true>
 {
-	static void assert()
+	static void sassert()
 	{
 	}
 };
-#define UTF_CPP_STATIC_ASSERT(condition) StaticAssert<condition>::assert();
+#define UTF_CPP_STATIC_ASSERT(condition) StaticAssert<condition>::sassert();
 #endif // C++ 11 or later
 
 namespace mono

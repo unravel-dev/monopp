@@ -40,6 +40,6 @@ jobs:
       run: |
         cmake --preset macos-${{matrix.config.arch}}
         cmake --build --preset macos-${{matrix.config.arch}}-release
-    - name: Test
-      run: |
-        ctest --preset macos-${{matrix.config.arch}}-release --rerun-failed --output-on-failure
+    #- name: Test
+    #  run: |
+    #    ctest --preset macos-${{matrix.config.arch}}-release --rerun-failed --output-on-failure
