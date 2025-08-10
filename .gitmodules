@@ -1,6 +1,6 @@
 [submodule "cmake/cmake"]
 	path = cmake/cmake
-	url = https://github.com/volcoma/cmake.git
+	url = https://github.com/unravel-dev/cmake.git
 [submodule "3rdparty/suitepp"]
 	path = 3rdparty/suitepp
-	url = https://github.com/volcoma/suitepp.git
+	url = https://github.com/unravel-dev/suitepp.git
