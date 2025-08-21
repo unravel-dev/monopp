@@ -137,7 +137,8 @@ auto init(const compiler_paths& paths, const debugging_config& debugging) -> boo
 	auto config_dir = mono_config_dir();
 
 	mono_set_dirs(assembly_dir.c_str(), config_dir.c_str());
-
+	mono_set_crash_chaining(true);
+	mono_set_signal_chaining(true);
 #ifndef _WIN32
 	// Adjust GC threads suspending mode on Linux
 	mono_set_env_var("MONO_THREADS_SUSPEND", "preemptive");
