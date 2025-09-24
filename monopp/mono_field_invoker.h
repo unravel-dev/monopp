@@ -125,4 +125,65 @@ auto make_invoker(const mono_field& field) -> mono_field_invoker<T>
 {
 	return make_field_invoker<T>(field);
 }
+
+template <typename T>
+auto set_field_value(const mono_object& obj, const std::string& name, const T& val) -> bool
+{
+	try
+	{
+		auto invoker = make_field_invoker<T>(obj.get_type(), name);
+		invoker.set_value(obj, val);
+		return true;
+	}
+	catch(const std::exception& e)
+	{
+		return false;
+	}
+}
+
+
+template <typename T>
+auto set_field_value(const mono_type& type, const std::string& name, const T& val) -> bool
+{
+	try
+	{
+		auto invoker = make_field_invoker<T>(type, name);
+		invoker.set_value(val);
+		return true;
+	}
+	catch(const std::exception& e)
+	{
+		return false;
+	}
+}
+
+template <typename T>
+auto get_field_value(const mono_object& obj, const std::string& name, T& val) -> bool
+{
+	try
+	{
+		auto invoker = make_field_invoker<T>(obj.get_type(), name);
+		val = invoker.get_value(obj);
+		return true;
+	}
+	catch(const std::exception& e)
+	{
+		return false;
+	}
+}
+
+template <typename T>
+auto get_field_value(const mono_type& type, const std::string& name, T& val) -> bool
+{
+	try
+	{
+		auto invoker = make_field_invoker<T>(type, name);
+		val = invoker.get_value();
+		return true;
+	}
+	catch(const std::exception& e)
+	{
+		return false;
+	}
+}
 } // namespace mono

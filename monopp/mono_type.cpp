@@ -429,7 +429,17 @@ mono_type::mono_type(MonoImage* image, const std::string& name_space, const std:
 	class_ = mono_class_from_name(image, name_space.c_str(), name.c_str());
 
 	if(!class_)
-		throw mono_exception("NATIVE::Could not get class : " + name_space + "." + name);
+	{
+		if(name_space.empty())
+		{
+			throw mono_exception("NATIVE::Could not get class : " + name);
+		}
+		
+		else
+		{
+			throw mono_exception("NATIVE::Could not get class : " + name_space + "." + name);
+		}
+	}
 
 	generate_meta();
 }

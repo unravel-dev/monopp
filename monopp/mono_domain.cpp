@@ -133,4 +133,26 @@ auto mono_domain::get_assembly(const std::string& path, bool shared) const -> mo
 	return assembly;
 }
 
+void mono_domain::name_assembly(const std::string& path, const std::string& name)
+{
+	native_assemblies_[path] = name;
+}
+
+auto mono_domain::get_named_assembly(const std::string& name) const -> const mono_assembly*
+{
+	auto it = native_assemblies_.find(name);
+	if(it != native_assemblies_.end())
+	{
+		auto it_as = assemblies_.find(it->second);
+		if(it_as != assemblies_.end())
+		{
+			const auto& assembly = it_as->second;
+
+			return &assembly;
+		}
+	}
+	return nullptr;
+}
+
+
 } // namespace mono

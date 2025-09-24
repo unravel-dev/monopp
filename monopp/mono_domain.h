@@ -20,8 +20,10 @@ public:
 	explicit mono_domain(const std::string& name);
 
 	~mono_domain();
-
+	
 	auto get_assembly(const std::string& path, bool shared = true) const -> mono_assembly;
+	void name_assembly(const std::string& path, const std::string& name);
+	auto get_named_assembly(const std::string& name) const -> const mono_assembly*;
 
 	auto new_string(const std::string& str) const -> mono_string;
 
@@ -35,6 +37,7 @@ public:
 
 private:
 	mutable std::unordered_map<std::string, mono_assembly> assemblies_;
+	mutable std::unordered_map<std::string, std::string> native_assemblies_;
 	non_owning_ptr<MonoDomain> domain_ = nullptr;
 };
 
