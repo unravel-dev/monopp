@@ -15,6 +15,7 @@ END_MONO_INCLUDE
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 namespace mono
 {
