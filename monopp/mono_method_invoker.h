@@ -99,15 +99,13 @@ private:
 			// Create args array with correct parameter types (C++14 compatible)
 			std::array<void*, N> argsv;
 			size_t idx = 0;
-			auto fill_args = [&](auto&& arg) -> int {
-				mono_type param_type = (idx < param_types.size()) ? param_types[idx] : mono_type{};
-				argsv[idx] = to_mono_arg(arg, param_type);
-				++idx;
-				return 0;
-			};
-			(void)fill_args;
+			
 			// C++14 compatible parameter pack expansion using initializer list
-			std::initializer_list<int> dummy = {fill_args(args)...};
+			std::initializer_list<int> dummy = {(
+				argsv[idx] = to_mono_arg(args, (idx < param_types.size()) ? param_types[idx] : mono_type{}),
+				++idx,
+				0
+			)...};
 			(void)dummy; // Suppress unused variable warning
 
 			MonoObject* ex = nullptr;
@@ -164,15 +162,13 @@ private:
 			// Create args array with correct parameter types (C++14 compatible)
 			std::array<void*, N> argsv;
 			size_t idx = 0;
-			auto fill_args = [&](auto&& arg) -> int {
-				mono_type param_type = (idx < param_types.size()) ? param_types[idx] : mono_type{};
-				argsv[idx] = to_mono_arg(arg, param_type);
-				++idx;
-				return 0;
-			};
-			(void)fill_args;
+			
 			// C++14 compatible parameter pack expansion using initializer list
-			std::initializer_list<int> dummy = {fill_args(args)...};
+			std::initializer_list<int> dummy = {(
+				argsv[idx] = to_mono_arg(args, (idx < param_types.size()) ? param_types[idx] : mono_type{}),
+				++idx,
+				0
+			)...};
 			(void)dummy; // Suppress unused variable warning
 
 			MonoObject* ex = nullptr;
