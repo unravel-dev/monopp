@@ -105,6 +105,7 @@ private:
 				++idx;
 				return 0;
 			};
+			(void)fill_args;
 			// C++14 compatible parameter pack expansion using initializer list
 			std::initializer_list<int> dummy = {fill_args(args)...};
 			(void)dummy; // Suppress unused variable warning
@@ -169,6 +170,7 @@ private:
 				++idx;
 				return 0;
 			};
+			(void)fill_args;
 			// C++14 compatible parameter pack expansion using initializer list
 			std::initializer_list<int> dummy = {fill_args(args)...};
 			(void)dummy; // Suppress unused variable warning
