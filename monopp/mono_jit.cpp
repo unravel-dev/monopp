@@ -395,6 +395,75 @@ auto create_compile_command_detailed(const compiler_params& params) -> compile_c
 	return cmd;
 }
 
+static std::string quote_if_needed(std::string s)
+{
+    if (s.find_first_of(" \t\"") != std::string::npos)
+    {
+        std::string out = "\"";
+        for (char c : s)
+            out += (c == '"') ? "\\\"" : std::string(1, c);
+        out += "\"";
+        return out;
+    }
+    return s;
+}
+
+auto create_compile_rsp(const compiler_params& p) -> std::string
+{
+    std::ostringstream rsp;
+
+    // basic options
+    if (!p.output_type.empty())
+        rsp << "-target:" << p.output_type << "\n";
+
+    if (!p.output_name.empty())
+        rsp << "-out:" << quote_if_needed(p.output_name) << "\n";
+
+    if (!p.output_doc_name.empty())
+        rsp << "-doc:" << quote_if_needed(p.output_doc_name) << "\n";
+
+    rsp << (p.debug ? "-debug\n" : "-optimize\n");
+    if (p.unsafe)
+        rsp << "-unsafe\n";
+
+    // reference search locations
+    if (!p.references_locations.empty())
+    {
+        rsp << "-lib:";
+        for (size_t i = 0; i < p.references_locations.size(); ++i)
+        {
+            if (i) rsp << ",";
+            rsp << quote_if_needed(p.references_locations[i]);
+        }
+        rsp << "\n";
+    }
+
+    // references
+    for (const auto& ref : p.references)
+        rsp << "-r:" << quote_if_needed(ref) << "\n";
+
+    // source files
+    for (const auto& file : p.files)
+        rsp << quote_if_needed(file) << "\n";
+
+    return rsp.str();
+}
+
+auto create_compile_command_detailed_rsp(const compiler_params& p, const std::string& rsp_file) -> compile_cmd
+{
+	compile_cmd cmd;
+	cmd.cmd = mono_msc_executable();
+	{
+		auto rsp =create_compile_rsp(p);
+
+		std::ofstream rsp_file_stream(rsp_file);
+		rsp_file_stream << rsp;
+		rsp_file_stream.close();
+	}
+	cmd.args.emplace_back("@" + quote_if_needed(rsp_file));
+	return cmd;
+}
+
 auto compile(const compiler_params& params) -> bool
 {
 	auto command = create_compile_command(params);

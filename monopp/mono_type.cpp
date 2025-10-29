@@ -15,6 +15,8 @@ BEGIN_MONO_INCLUDE
 #include <mono/metadata/debug-helpers.h>
 END_MONO_INCLUDE
 #include <iostream>
+
+
 namespace mono
 {
 namespace
@@ -540,7 +542,9 @@ auto mono_type::get_methods() const -> std::vector<mono_method>
 	while(method != nullptr)
 	{
 		auto sig = mono_method_signature(method);
-		std::string signature = mono_signature_get_desc(sig, false);
+		char* mono_signature = mono_signature_get_desc(sig, false);
+		std::string signature(mono_signature);
+		mono_free(mono_signature);
 		std::string name = mono_method_get_name(method);
 		std::string fullname = name + "(" + signature + ")";
 		methods.emplace_back(get_method(fullname));
@@ -653,8 +657,10 @@ auto mono_type::get_hash(const char* name) -> size_t
 auto mono_type::get_hash() const -> size_t
 {
 	MonoType* type = mono_class_get_type(class_);
-	const char* name = mono_type_get_name(type);
-	return get_hash(name);
+	char* name = mono_type_get_name(type);
+	size_t hash = get_hash(name);
+	mono_free(name);
+	return hash;
 }
 
 auto mono_type::get_name(bool full) const -> std::string
@@ -662,7 +668,10 @@ auto mono_type::get_name(bool full) const -> std::string
 	MonoType* type = mono_class_get_type(class_);
 	if(full)
 	{
-		return mono_type_get_name(type);
+		char* mono_name = mono_type_get_name(type);
+		std::string name(mono_name);
+		mono_free(mono_name);
+		return name;
 	}
 
 	if(mono_type_get_type(type) != MONO_TYPE_GENERICINST)
@@ -670,7 +679,10 @@ auto mono_type::get_name(bool full) const -> std::string
 		return mono_class_get_name(class_);
 	}
 	// Get generic arguments as part of the type name
-	return strip_namespace(mono_type_get_name(type));
+	char* mono_name = mono_type_get_name(type);
+	std::string name(mono_name);
+	mono_free(mono_name);
+	return strip_namespace(name);
 }
 
 auto mono_type::get_fullname() const -> std::string
@@ -753,6 +765,26 @@ auto mono_type::is_struct() const -> bool
 auto mono_type::get_rank() const -> int
 {
 	return mono_class_get_rank(class_);
+}
+
+auto mono_type::is_array() const -> bool
+{
+	if (!class_)
+	{
+		return false;
+	}
+	return mono_class_get_rank(class_) > 0;
+}
+
+auto mono_type::get_element_type() const -> mono_type
+{
+	if (!class_ || !is_array())
+	{
+		return {};
+	}
+	
+	MonoClass* element_class = mono_class_get_element_class(class_);
+	return mono_type(element_class);
 }
 
 auto mono_type::get_sizeof() const -> uint32_t

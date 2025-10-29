@@ -29,7 +29,7 @@ auto has_compatible_signature(const mono_method& method) -> bool
 	using return_type = typename function_traits<Signature>::return_type;
 	using arg_types = typename function_traits<Signature>::arg_types_decayed;
 	auto expected_rtype = method.get_return_type();
-	auto expected_arg_types = method.get_param_types();
+	const auto& expected_arg_types = method.get_param_types();
 
 	bool compatible = arity == expected_arg_types.size();
 	if(!compatible)
@@ -91,10 +91,23 @@ private:
 		}
 		auto tup = std::make_tuple(mono_converter<std::decay_t<Args>>::to_mono(std::forward<Args>(args))...);
 
-		auto inv = [method, object](auto... args)
+		const auto& param_types = this->get_param_types();
+		auto inv = [&](auto... args)
 		{
 			constexpr size_t N = sizeof...(args);
-			std::array<void*, N> argsv = {to_mono_arg(args)...};
+			
+			// Create args array with correct parameter types (C++14 compatible)
+			std::array<void*, N> argsv;
+			size_t idx = 0;
+			auto fill_args = [&](auto&& arg) -> int {
+				mono_type param_type = (idx < param_types.size()) ? param_types[idx] : mono_type{};
+				argsv[idx] = to_mono_arg(arg, param_type);
+				++idx;
+				return 0;
+			};
+			// C++14 compatible parameter pack expansion using initializer list
+			std::initializer_list<int> dummy = {fill_args(args)...};
+			(void)dummy; // Suppress unused variable warning
 
 			MonoObject* ex = nullptr;
 			mono_runtime_invoke(method, object, argsv.data(), &ex);
@@ -142,10 +155,23 @@ private:
 			method = mono_object_get_virtual_method(object, method);
 		}
 		auto tup = std::make_tuple(mono_converter<std::decay_t<Args>>::to_mono(std::forward<Args>(args))...);
-		auto inv = [method, object](auto... args)
+		const auto& param_types = this->get_param_types();
+		auto inv = [&](auto... args)
 		{
 			constexpr size_t N = sizeof...(args);
-			std::array<void*, N> argsv = {to_mono_arg(args)...};
+			
+			// Create args array with correct parameter types (C++14 compatible)
+			std::array<void*, N> argsv;
+			size_t idx = 0;
+			auto fill_args = [&](auto&& arg) -> int {
+				mono_type param_type = (idx < param_types.size()) ? param_types[idx] : mono_type{};
+				argsv[idx] = to_mono_arg(arg, param_type);
+				++idx;
+				return 0;
+			};
+			// C++14 compatible parameter pack expansion using initializer list
+			std::initializer_list<int> dummy = {fill_args(args)...};
+			(void)dummy; // Suppress unused variable warning
 
 			MonoObject* ex = nullptr;
 			auto result = mono_runtime_invoke(method, object, argsv.data(), &ex);

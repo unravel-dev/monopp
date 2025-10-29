@@ -12,16 +12,23 @@
 namespace mono
 {
 
+// Forward declarations
+class mono_object;
+
+// Basic to_mono_arg for value types with type info
 template <typename T>
-inline auto to_mono_arg(T& t)
+inline auto to_mono_arg(T& t, const mono_type& type) -> void*
 {
 	static_assert(is_mono_valuetype<T>::value, "Should not pass here for non-pod types");
+	(void)type; // Suppress unused parameter warning
 	return std::addressof(t);
 }
-inline auto to_mono_arg(MonoObject* t)
-{
-	return t;
-}
+
+// Basic to_mono_arg for MonoObject*
+auto to_mono_arg(MonoObject* value_obj, const mono_type& type) -> void*;
+
+// Handle mono_object wrapper
+auto to_mono_arg(const mono_object& value, const mono_type& type) -> void*;
 
 template <typename T>
 auto check_type_layout(MonoObject* obj) -> bool

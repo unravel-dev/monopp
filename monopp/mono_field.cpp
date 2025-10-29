@@ -55,7 +55,10 @@ auto mono_field::get_name() const -> std::string
 }
 auto mono_field::get_fullname() const -> std::string
 {
-	return mono_field_full_name(field_);
+	char* mono_name = mono_field_full_name(field_);
+	std::string name(mono_name);
+	mono_free(mono_name);
+	return name;
 }
 
 auto mono_field::get_full_declname() const -> std::string

@@ -66,6 +66,8 @@ struct compile_cmd
 
 auto create_compile_command(const compiler_params& params) -> std::string;
 auto create_compile_command_detailed(const compiler_params& params) -> compile_cmd;
+auto create_compile_rsp(const compiler_params& p) -> std::string;
+auto create_compile_command_detailed_rsp(const compiler_params& p, const std::string& rsp_file) -> compile_cmd;
 auto compile(const compiler_params& params) -> bool;
 
 auto get_common_library_names() -> const std::vector<std::string>&;

@@ -85,19 +85,25 @@ auto mono_method::get_return_type() const -> mono_type
 	return mono_type(type);
 }
 
-auto mono_method::get_param_types() const -> std::vector<mono_type>
+void mono_method::cache_param_types() const
 {
-	void* iter = nullptr;
-	auto type = mono_signature_get_params(signature_, &iter);
-	std::vector<mono_type> params;
-	while(type)
+	if (!param_types_cached_)
 	{
-		params.emplace_back(type);
-
-		type = mono_signature_get_params(signature_, &iter);
+		void* iter = nullptr;
+		auto type = mono_signature_get_params(signature_, &iter);
+		while(type)
+		{
+			cached_param_types_.emplace_back(type);
+			type = mono_signature_get_params(signature_, &iter);
+		}
+		param_types_cached_ = true;
 	}
+}
 
-	return params;
+auto mono_method::get_param_types() const -> const std::vector<mono_type>&
+{
+	cache_param_types();
+	return cached_param_types_;
 }
 
 auto mono_method::get_name() const -> std::string
@@ -107,8 +113,10 @@ auto mono_method::get_name() const -> std::string
 
 auto mono_method::get_fullname() const -> std::string
 {
-	return mono_method_full_name(method_, true);
-	;
+	char* mono_name = mono_method_full_name(method_, true);
+	std::string name(mono_name);
+	mono_free(mono_name);
+	return name;
 }
 auto mono_method::get_full_declname() const -> std::string
 {

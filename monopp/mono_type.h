@@ -80,6 +80,10 @@ public:
 	auto get_enum_values() const -> std::vector<std::pair<T, std::string>>;
 
 	auto get_rank() const -> int;
+	
+	auto is_array() const -> bool;
+	
+	auto get_element_type() const -> mono_type;
 
 	auto get_sizeof() const -> std::uint32_t;
 

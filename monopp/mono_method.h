@@ -11,13 +11,14 @@ namespace mono
 class mono_method
 {
 public:
+	mono_method() = default;
 	explicit mono_method(MonoMethod* method);
 	explicit mono_method(const mono_type& type, const std::string& name_with_args);
 	explicit mono_method(const mono_type& type, const std::string& name, int argc);
 
 	auto get_return_type() const -> mono_type;
 
-	auto get_param_types() const -> std::vector<mono_type>;
+	auto get_param_types() const -> const std::vector<mono_type>&;
 
 	auto get_name() const -> std::string;
 
@@ -48,9 +49,14 @@ public:
 
 protected:
 	void generate_meta();
+	void cache_param_types() const;
 
 	non_owning_ptr<MonoMethod> method_ = nullptr;
 	non_owning_ptr<MonoMethodSignature> signature_ = nullptr;
+	
+	// Cache param types to avoid repeated allocations
+	mutable std::vector<mono_type> cached_param_types_;
+	mutable bool param_types_cached_ = false;
 
 
 #if MONOPP_DEBUG_LEVEL > 0

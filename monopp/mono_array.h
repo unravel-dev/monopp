@@ -255,11 +255,32 @@ public:
 		}
 	}
 
-	// Access element at index for primitive types
+	// Access element at index
 	auto get(size_t index) const -> mono_object
 	{
-		MonoObject* obj = mono_array_get(get_internal_array(), MonoObject*, index);
-		return mono_object(obj);
+		auto element_type = get_element_type();
+		
+		if (element_type.is_valuetype())
+		{
+			// For value types, we need to box them
+			MonoDomain* domain = mono_domain_get();
+			MonoClass* element_class = element_type.get_internal_ptr();
+			
+			// Get the address of the value type element in the array
+			void* element_addr = mono_array_addr_with_size(get_internal_array(), 
+			                                                 element_type.get_sizeof(), 
+			                                                 index);
+			
+			// Box the value type
+			MonoObject* boxed = mono_value_box(domain, element_class, element_addr);
+			return mono_object(boxed);
+		}
+		else
+		{
+			// For reference types, just get the MonoObject* directly
+			MonoObject* obj = mono_array_get(get_internal_array(), MonoObject*, index);
+			return mono_object(obj);
+		}
 	}
 
 	auto get_object(size_t index) const -> mono_object
@@ -267,10 +288,34 @@ public:
 		return get(index);
 	}
 
-	// Set element at index for primitive types
+	// Set element at index
 	void set(size_t index, const mono_object& value)
 	{
-		mono_array_set(get_internal_array(), MonoObject*, index, value.get_internal_ptr());
+		auto element_type = get_element_type();
+		
+		if (element_type.is_valuetype())
+		{
+			// For value types, we need to unbox them
+			MonoObject* value_obj = value.get_internal_ptr();
+			if (value_obj)
+			{
+				// Unbox the value
+				void* unboxed = mono_object_unbox(value_obj);
+				
+				// Get the address of the value type element in the array
+				void* element_addr = mono_array_addr_with_size(get_internal_array(), 
+				                                                 element_type.get_sizeof(), 
+				                                                 index);
+				
+				// Copy the unboxed value to the array
+				std::memcpy(element_addr, unboxed, element_type.get_sizeof());
+			}
+		}
+		else
+		{
+			// For reference types, just set the MonoObject* directly
+			mono_array_set(get_internal_array(), MonoObject*, index, value.get_internal_ptr());
+		}
 	}
 
 	// Convert to std::vector like for primitive types
