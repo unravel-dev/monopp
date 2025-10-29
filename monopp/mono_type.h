@@ -22,6 +22,8 @@ class mono_domain;
 class mono_type
 {
 public:
+    struct meta_info;
+
 	mono_type();
 
 	explicit mono_type(MonoImage* image, const std::string& name);
@@ -104,21 +106,9 @@ private:
 	void generate_meta();
 
 	non_owning_ptr<MonoClass> class_ = nullptr;
-
-#if MONOPP_DEBUG_LEVEL > 0
-	struct meta_info
-	{
-		std::string name_space;
-		std::string name;
-		std::string fullname;
-		std::uint32_t size = 0;
-		std::uint32_t align = 0;
-		int rank = 0;
-		bool is_valuetype = true;
-		bool is_enum = false;
-	};
 	std::shared_ptr<meta_info> meta_{};
-#endif
 };
+
+void reset_type_cache();
 
 } // namespace mono

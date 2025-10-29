@@ -11,6 +11,8 @@ namespace mono
 class mono_method
 {
 public:
+	struct meta_info;
+
 	mono_method() = default;
 	explicit mono_method(MonoMethod* method);
 	explicit mono_method(const mono_type& type, const std::string& name_with_args);
@@ -58,18 +60,9 @@ protected:
 	mutable std::vector<mono_type> cached_param_types_;
 	mutable bool param_types_cached_ = false;
 
-
-#if MONOPP_DEBUG_LEVEL > 0
-	struct meta_info
-	{
-		std::string name;
-		std::string fullname;
-		std::string full_declname;
-	};
-
 	std::shared_ptr<meta_info> meta_{};
-#endif
-
 };
+
+void reset_method_cache();
 
 } // namespace mono

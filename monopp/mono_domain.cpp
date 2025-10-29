@@ -3,6 +3,10 @@
 
 #include "mono_string.h"
 #include "mono_method_invoker.h"
+#include "mono_type.h"
+#include "mono_method.h"
+#include "mono_property.h"
+#include "mono_field.h"
 
 BEGIN_MONO_INCLUDE
 #include <mono/metadata/appdomain.h>
@@ -115,6 +119,10 @@ mono_domain::~mono_domain()
 		}
 	}
 	mono_gc_collect(mono_gc_max_generation());
+	reset_type_cache();
+	reset_method_cache();
+	reset_property_cache();
+	reset_field_cache();
 }
 
 auto mono_domain::get_assembly(const std::string& path, bool shared) const -> mono_assembly

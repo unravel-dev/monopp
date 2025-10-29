@@ -2,6 +2,8 @@
 #include "mono_exception.h"
 #include "mono_type.h"
 
+#include <unordered_map>
+
 BEGIN_MONO_INCLUDE
 #include <mono/metadata/appdomain.h>
 #include <mono/metadata/attrdefs.h>
@@ -10,6 +12,40 @@ END_MONO_INCLUDE
 
 namespace mono
 {
+struct mono_method::meta_info
+{
+	std::string name;
+	std::string fullname;
+	std::string full_declname;
+};
+
+namespace
+{
+
+auto get_method_cache() -> std::unordered_map<MonoMethod*, std::shared_ptr<mono_method::meta_info>>&
+{
+	static std::unordered_map<MonoMethod*, std::shared_ptr<mono_method::meta_info>> method_cache;
+	return method_cache;
+}
+
+auto get_meta_info(MonoMethod* method) -> std::shared_ptr<mono_method::meta_info>
+{
+	auto& cache = get_method_cache();
+	auto it = cache.find(method);
+	if(it != cache.end())
+	{
+		return it->second;
+	}
+	return nullptr;
+}
+
+void set_meta_info(MonoMethod* method, std::shared_ptr<mono_method::meta_info> meta)
+{
+	auto& cache = get_method_cache();
+	cache[method] = meta;
+}
+
+} // namespace
 
 mono_method::mono_method(MonoMethod* method)
 {
@@ -71,12 +107,17 @@ auto mono_method::get_internal_ptr() const -> MonoMethod*
 
 void mono_method::generate_meta()
 {
-#if MONOPP_DEBUG_LEVEL > 0
-	meta_ = std::make_shared<meta_info>();
-	meta_->name = get_name();
-	meta_->fullname = get_fullname();
-	meta_->full_declname = get_full_declname();
-#endif
+	auto meta = get_meta_info(method_);
+	if(!meta)
+	{
+		meta = std::make_shared<meta_info>();
+		meta->name = get_name();
+		meta->fullname = get_fullname();
+		meta->full_declname = get_full_declname();
+		set_meta_info(method_, meta);
+	}
+
+	meta_ = meta;
 }
 
 auto mono_method::get_return_type() const -> mono_type
@@ -108,11 +149,19 @@ auto mono_method::get_param_types() const -> const std::vector<mono_type>&
 
 auto mono_method::get_name() const -> std::string
 {
+	if(meta_)
+	{
+		return meta_->name;
+	}
 	return mono_method_get_name(method_);
 }
 
 auto mono_method::get_fullname() const -> std::string
 {
+	if(meta_)
+	{
+		return meta_->fullname;
+	}
 	char* mono_name = mono_method_full_name(method_, true);
 	std::string name(mono_name);
 	mono_free(mono_name);
@@ -120,6 +169,10 @@ auto mono_method::get_fullname() const -> std::string
 }
 auto mono_method::get_full_declname() const -> std::string
 {
+	if(meta_)
+	{
+		return meta_->full_declname;
+	}
 	std::string storage = (is_static() ? " static " : " ");
 	return to_string(get_visibility()) + storage + get_fullname();
 }
@@ -267,5 +320,10 @@ auto mono_method::valid() const -> bool
 mono_method::operator bool() const
 {
 	return valid();
+}
+void reset_method_cache()
+{
+	auto& cache = get_method_cache();
+	cache.clear();
 }
 } // namespace mono

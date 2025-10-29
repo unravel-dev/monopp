@@ -1,8 +1,9 @@
 #include "mono_property.h"
-#include "mono_assembly.h"
 #include "mono_exception.h"
 #include "mono_method.h"
 #include "mono_object.h"
+
+#include <unordered_map>
 
 BEGIN_MONO_INCLUDE
 #include <mono/metadata/appdomain.h>
@@ -12,6 +13,40 @@ END_MONO_INCLUDE
 
 namespace mono
 {
+struct mono_property::meta_info
+{
+	std::string name;
+	std::string fullname;
+	std::string full_declname;
+};
+
+namespace
+{
+
+auto get_property_cache() -> std::unordered_map<MonoProperty*, std::shared_ptr<mono_property::meta_info>>&
+{
+	static std::unordered_map<MonoProperty*, std::shared_ptr<mono_property::meta_info>> property_cache;
+	return property_cache;
+}
+
+auto get_meta_info(MonoProperty* property) -> std::shared_ptr<mono_property::meta_info>
+{
+	auto& cache = get_property_cache();
+	auto it = cache.find(property);
+	if(it != cache.end())
+	{
+		return it->second;
+	}
+	return nullptr;
+}
+
+void set_meta_info(MonoProperty* property, std::shared_ptr<mono_property::meta_info> meta)
+{
+	auto& cache = get_property_cache();
+	cache[property] = meta;
+}
+
+} // namespace
 
 mono_property::mono_property(const mono_type& type, const std::string& name)
 	: property_(mono_class_get_property_from_name(type.get_internal_ptr(), name.c_str()))
@@ -32,16 +67,28 @@ auto mono_property::get_internal_ptr() const -> MonoProperty*
 
 auto mono_property::get_name() const -> std::string
 {
+	if(meta_)
+	{
+		return meta_->name;
+	}
 	return mono_property_get_name(get_internal_ptr());
 }
 
 auto mono_property::get_fullname() const -> std::string
 {
+	if(meta_)
+	{
+		return meta_->fullname;
+	}
 	return mono_property_get_name(get_internal_ptr());
 }
 
 auto mono_property::get_full_declname() const -> std::string
 {
+	if(meta_)
+	{
+		return meta_->full_declname;
+	}
 	std::string storage = (is_static() ? " static " : " ");
 	return to_string(get_visibility()) + storage + get_name();
 }
@@ -108,12 +155,17 @@ auto mono_property::is_readonly() const -> bool
 
 void mono_property::generate_meta()
 {
-#if MONOPP_DEBUG_LEVEL > 0
-	meta_ = std::make_shared<meta_info>();
-	meta_->name = get_name();
-	meta_->fullname = get_fullname();
-	meta_->full_declname = get_full_declname();
-#endif
+	auto meta = get_meta_info(property_);
+	if(!meta)
+	{
+		meta = std::make_shared<meta_info>();
+		meta->name = get_name();
+		meta->fullname = get_fullname();
+		meta->full_declname = get_full_declname();
+		set_meta_info(property_, meta);
+	}
+
+	meta_ = meta;
 }
 
 auto mono_property::get_attributes() const -> std::vector<mono_object>
@@ -164,5 +216,10 @@ auto mono_property::has_default() const -> bool
 {
 	uint32_t flags = mono_property_get_flags(property_);
 	return (flags & MONO_PROPERTY_ATTR_HAS_DEFAULT) != 0;
+}
+void reset_property_cache()
+{
+	auto& cache = get_property_cache();
+	cache.clear();
 }
 } // namespace mono

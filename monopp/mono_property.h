@@ -17,6 +17,8 @@ class mono_object;
 class mono_property
 {
 public:
+	struct meta_info;
+
 	explicit mono_property(const mono_type& type, const std::string& name);
 
 	auto get_name() const -> std::string;
@@ -52,16 +54,9 @@ private:
 
 	non_owning_ptr<MonoProperty> property_ = nullptr;
 
-#if MONOPP_DEBUG_LEVEL > 0
-	struct meta_info
-	{
-		std::string name;
-		std::string fullname;
-		std::string full_declname;
-	};
-
 	std::shared_ptr<meta_info> meta_{};
-#endif
 };
+
+void reset_property_cache();
 
 } // namespace mono

@@ -16,6 +16,8 @@ class mono_object;
 class mono_field
 {
 public:
+	struct meta_info;
+
 	explicit mono_field(const mono_type& type, const std::string& name);
 
 	auto get_name() const -> std::string;
@@ -51,16 +53,9 @@ protected:
 
 	non_owning_ptr<MonoVTable> owning_type_vtable_ = nullptr;
 
-#if MONOPP_DEBUG_LEVEL > 0
-	struct meta_info
-	{
-		std::string name;
-		std::string fullname;
-		std::string full_declname;
-	};
-
 	std::shared_ptr<meta_info> meta_{};
-#endif
 };
+
+void reset_field_cache();
 
 } // namespace mono

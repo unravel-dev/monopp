@@ -19,8 +19,45 @@ END_MONO_INCLUDE
 
 namespace mono
 {
+struct mono_type::meta_info
+{
+	size_t hash = 0;
+	std::string name_space;
+	std::string name;
+	std::string fullname;
+	std::uint32_t size = 0;
+	std::uint32_t align = 0;
+	int rank = 0;
+	bool is_valuetype = true;
+	bool is_enum = false;
+	bool is_array = false;
+};
+
 namespace
 {
+
+auto get_type_cache() -> std::unordered_map<MonoClass*, std::shared_ptr<mono_type::meta_info>>&
+{
+	static std::unordered_map<MonoClass*, std::shared_ptr<mono_type::meta_info>> type_cache;
+	return type_cache;
+}
+
+auto get_meta_info(MonoClass* cls) -> std::shared_ptr<mono_type::meta_info>
+{
+	auto& cache = get_type_cache();
+	auto it = cache.find(cls);
+	if(it != cache.end())
+	{
+		return it->second;
+	}
+	return nullptr;
+}
+
+void set_meta_info(MonoClass* cls, std::shared_ptr<mono_type::meta_info> meta)
+{
+	auto& cache = get_type_cache();
+	cache[cls] = meta;
+}
 
 constexpr static uint64_t s_Table64[256] = {
 
@@ -619,17 +656,24 @@ auto mono_type::get_internal_ptr() const -> MonoClass*
 
 void mono_type::generate_meta()
 {
-#if MONOPP_DEBUG_LEVEL > 0
-	meta_ = std::make_shared<meta_info>();
-	meta_->name_space = get_namespace();
-	meta_->name = get_name();
-	meta_->fullname = get_fullname();
-	meta_->rank = get_rank();
-	meta_->is_valuetype = is_valuetype();
-	meta_->is_enum = is_enum();
-	meta_->size = get_sizeof();
-	meta_->align = get_alignof();
-#endif
+	auto meta = get_meta_info(class_);
+	if(!meta)
+	{
+		meta = std::make_shared<meta_info>();
+		meta->hash = get_hash();
+		meta->name_space = get_namespace();
+		meta->name = get_name();
+		meta->fullname = get_fullname();
+		meta->rank = get_rank();
+		meta->is_valuetype = is_valuetype();
+		meta->is_enum = is_enum();
+		meta->size = get_sizeof();
+		meta->align = get_alignof();
+		meta->is_array = is_array();
+		set_meta_info(class_, meta);
+	}
+
+	meta_ = meta;
 }
 
 auto mono_type::is_derived_from(const mono_type& type) const -> bool
@@ -656,6 +700,10 @@ auto mono_type::get_hash(const char* name) -> size_t
 
 auto mono_type::get_hash() const -> size_t
 {
+	if(meta_)
+	{
+		return meta_->hash;
+	}
 	MonoType* type = mono_class_get_type(class_);
 	char* name = mono_type_get_name(type);
 	size_t hash = get_hash(name);
@@ -665,6 +713,10 @@ auto mono_type::get_hash() const -> size_t
 
 auto mono_type::get_name(bool full) const -> std::string
 {
+	if(meta_)
+	{
+		return meta_->name;
+	}
 	MonoType* type = mono_class_get_type(class_);
 	if(full)
 	{
@@ -687,15 +739,27 @@ auto mono_type::get_name(bool full) const -> std::string
 
 auto mono_type::get_fullname() const -> std::string
 {
+	if(meta_)
+	{
+		return meta_->fullname;
+	}
 	return get_name(true);
 }
 auto mono_type::is_valuetype() const -> bool
 {
+	if(meta_)
+	{
+		return meta_->is_valuetype;
+	}
 	return !!mono_class_is_valuetype(class_);
 }
 
 auto mono_type::mono_type::is_enum() const -> bool
 {
+	if(meta_)
+	{
+		return meta_->is_enum;
+	}
 	return mono_class_is_enum(class_);
 }
 
@@ -764,11 +828,19 @@ auto mono_type::is_struct() const -> bool
 
 auto mono_type::get_rank() const -> int
 {
+	if(meta_)
+	{
+		return meta_->rank;
+	}
 	return mono_class_get_rank(class_);
 }
 
 auto mono_type::is_array() const -> bool
 {
+	if(meta_)
+	{
+		return meta_->is_array;
+	}
 	if (!class_)
 	{
 		return false;
@@ -789,12 +861,20 @@ auto mono_type::get_element_type() const -> mono_type
 
 auto mono_type::get_sizeof() const -> uint32_t
 {
+	if(meta_)
+	{
+		return meta_->size;
+	}
 	uint32_t align{};
 	return std::uint32_t(mono_class_value_size(class_, &align));
 }
 
 auto mono_type::get_alignof() const -> uint32_t
 {
+	if(meta_)
+	{
+		return meta_->align;
+	}
 	uint32_t align{};
 	mono_class_value_size(class_, &align);
 	return align;
@@ -813,5 +893,11 @@ auto mono_type::is_sealed() const -> bool
 auto mono_type::is_interface() const -> bool
 {
 	return (mono_class_get_flags(class_) & MONO_TYPE_ATTR_INTERFACE) != 0;
+}
+
+void reset_type_cache()
+{
+	auto& cache = get_type_cache();
+	cache.clear();
 }
 } // namespace mono
