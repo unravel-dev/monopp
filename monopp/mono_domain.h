@@ -13,6 +13,7 @@ END_MONO_INCLUDE
 namespace mono
 {
 class mono_string;
+class mono_type;
 
 class mono_domain
 {
@@ -22,8 +23,6 @@ public:
 	~mono_domain();
 	
 	auto get_assembly(const std::string& path, bool shared = true) const -> mono_assembly;
-	void name_assembly(const std::string& path, const std::string& name);
-	auto get_named_assembly(const std::string& name) const -> const mono_assembly*;
 
 	auto new_string(const std::string& str) const -> mono_string;
 
@@ -33,11 +32,13 @@ public:
 
 	static auto get_current_domain() -> const mono_domain&;
 
+	auto get_type(const std::string& name) const -> mono_type;
+	auto get_type(const std::string& name_space, const std::string& name) const -> mono_type;
+
 	auto get_internal_ptr() const -> MonoDomain*;
 
 private:
 	mutable std::unordered_map<std::string, mono_assembly> assemblies_;
-	mutable std::unordered_map<std::string, std::string> native_assemblies_;
 	non_owning_ptr<MonoDomain> domain_ = nullptr;
 };
 

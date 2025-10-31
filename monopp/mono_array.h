@@ -11,6 +11,14 @@
 namespace mono
 {
 
+template<typename VectorLike>
+struct vector_like_wrapper
+{
+	using value_type = typename VectorLike::value_type;
+	VectorLike container;
+	mono_type type;
+};
+
 class mono_array_base : public mono_object
 {
 public:
@@ -68,7 +76,7 @@ public:
 
 	static_assert(is_mono_valuetype<T>::value, "Specialize mono_array for non-value types");
 
-	auto craete_array(const mono_domain& domain, size_t count, const mono_type& element_type)
+	auto create_array(const mono_domain& domain, size_t count, const mono_type& element_type)
 		-> MonoArray*
 	{
 		auto element_type_ = element_type.get_internal_ptr();
@@ -91,8 +99,8 @@ public:
 
 	// Construct a new MonoArray from a std::VectorLike of trivial types
 	template<typename VectorLike = std::vector<T>>
-	mono_array(const mono_domain& domain, const VectorLike& vec)
-		: mono_array_base(craete_array(domain, vec.size(), {}))
+	mono_array(const VectorLike& vec)
+		: mono_array_base(create_array(mono_domain::get_current_domain(), vec.size(), {}))
 	{
 		for(size_t i = 0; i < vec.size(); ++i)
 		{
@@ -101,8 +109,8 @@ public:
 	}
 
 	template<typename VectorLike = std::vector<T>>
-	mono_array(const mono_domain& domain, const VectorLike& vec, const mono_type& element_type)
-		: mono_array_base(craete_array(domain, vec.size(), element_type))
+	mono_array(const VectorLike& vec, const mono_type& element_type)
+		: mono_array_base(create_array(mono_domain::get_current_domain(), vec.size(), element_type))
 	{
 		for(size_t i = 0; i < vec.size(); ++i)
 		{
@@ -244,10 +252,20 @@ public:
 
 	// Construct a new MonoArray from a std::vector of primitive types
 	template<typename VectorLike = std::vector<mono_object>>
-	mono_array(const mono_domain& domain, const VectorLike& vec)
+	mono_array(const VectorLike& vec)
 		: mono_array_base(vec.empty() ? nullptr
-									  : mono_array_new(domain.get_internal_ptr(),
+									  : mono_array_new(mono_domain::get_current_domain().get_internal_ptr(),
 													   vec[0].get_type().get_internal_ptr(), vec.size()))
+	{
+		for(size_t i = 0; i < vec.size(); ++i)
+		{
+			set(i, vec[i]);
+		}
+	}
+
+	template<typename VectorLike = std::vector<mono_object>>
+	mono_array(const VectorLike& vec, const mono_type& element_type)
+		: mono_array_base(mono_array_new(mono_domain::get_current_domain().get_internal_ptr(), element_type.get_internal_ptr(), vec.size()))
 	{
 		for(size_t i = 0; i < vec.size(); ++i)
 		{
@@ -330,5 +348,6 @@ public:
 		return vec;
 	}
 };
+
 
 } // namespace mono
