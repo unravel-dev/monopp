@@ -21,4 +21,21 @@ void set_log_handler(const std::string& category, const log_handler& handler)
 	detail::get_log_handler()[category] = handler;
 }
 
+void log_message(const std::string& message, const std::string& category)
+{
+	const auto& logger = get_log_handler(category);
+	if(logger)
+	{
+		logger(message);
+	}
+	else
+	{
+		const auto& default_logger = get_log_handler("default");
+		if(default_logger)
+		{
+			default_logger(message);
+		}
+	}
+}
+
 } // namespace mono

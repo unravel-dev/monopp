@@ -23,6 +23,22 @@ namespace mono
 namespace
 {
 
+static MonoAssembly* preload_hook(MonoAssemblyName *aname, char ** /*assemblies_path*/, void * /*user_data*/)
+{
+    char *n = mono_stringify_assembly_name(aname);
+    log_message("Preload request: " + std::string(n), "trace");
+    mono_free(n);
+    return NULL; // just logging
+}
+
+static MonoAssembly* refonly_preload_hook(MonoAssemblyName *aname, char ** /*assemblies_path*/, void * /*user_data*/)
+{
+    char *n = mono_stringify_assembly_name(aname);
+    log_message("Refonly preload request: " + std::string(n), "trace");
+    mono_free(n);
+    return NULL; // just logging
+}
+
 static void on_log_callback(const char* log_domain, const char* log_level, const char* message,
 							mono_bool /*fatal*/, void* /*user_data*/)
 
@@ -44,25 +60,12 @@ static void on_log_callback(const char* log_domain, const char* log_level, const
 		format_msg += "] ";
 	}
 	format_msg += message;
-	const auto& logger = get_log_handler(category);
-	if(logger)
-	{
-		logger(format_msg);
-	}
-	else
-	{
-		const auto& default_logger = get_log_handler("default");
-		if(default_logger)
-		{
-			default_logger(format_msg);
-		}
-	}
+	log_message(format_msg, category);
 }
 
 MonoDomain* jit_domain = nullptr;
 compiler_paths* comp_paths = nullptr;
 
-#ifndef _WIN32
 void mono_set_env_var(const char* var_name, const char* value)
 {
 #if _WIN32
@@ -71,7 +74,6 @@ void mono_set_env_var(const char* var_name, const char* value)
 	setenv(var_name, value, 1); // 1 means overwrite if it already exists
 #endif
 }
-#endif
 } // namespace
 
 auto mono_assembly_dir() -> std::string
@@ -136,10 +138,29 @@ auto init(const compiler_paths& paths, const debugging_config& debugging) -> boo
 
 	auto assembly_dir = mono_assembly_dir();
 	auto config_dir = mono_config_dir();
+	auto asmpath = assembly_dir;
+	
+#ifdef _WIN32
+    asmpath += "\\mono\\4.5";
+    mono_set_env_var("MONO_GAC_PREFIX", "");                          // disable system GAC
+    mono_set_env_var("MONO_PATH", asmpath.c_str());
+#else
+    asmpath += "/mono/4.5";
+    mono_set_env_var("MONO_GAC_PREFIX", "");
+    mono_set_env_var("MONO_PATH", asmpath.c_str());
+#endif
 
 	mono_set_dirs(assembly_dir.c_str(), config_dir.c_str());
+
+	mono_set_assemblies_path(asmpath.c_str());           // *** critical ***
+
+
 	mono_set_crash_chaining(true);
 	mono_set_signal_chaining(true);
+
+	mono_install_assembly_preload_hook(preload_hook, NULL);
+	mono_install_assembly_refonly_preload_hook(refonly_preload_hook, NULL);
+
 #ifndef _WIN32
 	// Adjust GC threads suspending mode on Linux
 	mono_set_env_var("MONO_THREADS_SUSPEND", "preemptive");
@@ -192,10 +213,10 @@ auto init(const compiler_paths& paths, const debugging_config& debugging) -> boo
 
 	set_log_handler("default", [](const std::string& msg) { std::cout << msg << std::endl; });
 
-	jit_domain = mono_jit_init("mono_jit");
+	jit_domain = mono_jit_init_version("mono_jit", "v4.0.30319");
 
-	const auto& default_logger = get_log_handler("default");
-	default_logger("mscorlib was loaded from: " + get_core_assembly_path());
+	
+	log_message("mscorlib was loaded from: " + get_core_assembly_path(), "trace");
 
 	mono_thread_set_main(mono_thread_current());
 
