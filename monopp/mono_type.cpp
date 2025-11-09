@@ -538,89 +538,137 @@ auto mono_type::get_property(const std::string& name) const -> mono_property
 	return mono_property(*this, name);
 }
 
-auto mono_type::get_fields() const -> std::vector<mono_field>
+auto mono_type::get_fields(bool include_base) const -> std::vector<mono_field>
 {
-	void* iter = nullptr;
-	auto field = mono_class_get_fields(class_, &iter);
 	std::vector<mono_field> fields;
-	while(field)
+	auto class_ptr = class_;
+	while(class_ptr)
 	{
-		std::string name = mono_field_get_name(field);
+		void* iter = nullptr;
+		auto field = mono_class_get_fields(class_ptr, &iter);
+		while(field)
+		{
+			std::string name = mono_field_get_name(field);
 
-		fields.emplace_back(get_field(name));
+			fields.emplace_back(get_field(name));
 
-		field = mono_class_get_fields(class_, &iter);
+			field = mono_class_get_fields(class_ptr, &iter);
+		}
+		if(include_base)
+		{
+			class_ptr = mono_class_get_parent(class_ptr);
+		}
+		else
+		{
+			break;
+		}
 	}
 	return fields;
 }
 
-auto mono_type::get_properties() const -> std::vector<mono_property>
+auto mono_type::get_properties(bool include_base) const -> std::vector<mono_property>
 {
-	void* iter = nullptr;
-	auto prop = mono_class_get_properties(class_, &iter);
 	std::vector<mono_property> props;
-	while(prop)
+	auto class_ptr = class_;
+	while(class_ptr)
 	{
-		std::string name = mono_property_get_name(prop);
+		void* iter = nullptr;
+		auto prop = mono_class_get_properties(class_ptr, &iter);
+		while(prop)
+		{
+			std::string name = mono_property_get_name(prop);
 
-		props.emplace_back(get_property(name));
+			props.emplace_back(get_property(name));
 
-		prop = mono_class_get_properties(class_, &iter);
+			prop = mono_class_get_properties(class_ptr, &iter);
+		}
+		if(include_base)
+		{
+			class_ptr = mono_class_get_parent(class_ptr);
+		}
+		else
+		{
+			break;
+		}
 	}
 	return props;
 }
 
-auto mono_type::get_methods() const -> std::vector<mono_method>
+auto mono_type::get_methods(bool include_base) const -> std::vector<mono_method>
 {
-	void* iter = nullptr;
-	auto method = mono_class_get_methods(class_, &iter);
 	std::vector<mono_method> methods;
-
-	while(method != nullptr)
+	auto class_ptr = class_;
+	while(class_ptr)
 	{
-		auto sig = mono_method_signature(method);
-		char* mono_signature = mono_signature_get_desc(sig, false);
-		std::string signature(mono_signature);
-		mono_free(mono_signature);
-		std::string name = mono_method_get_name(method);
-		std::string fullname = name + "(" + signature + ")";
-		methods.emplace_back(get_method(fullname));
-		method = mono_class_get_methods(class_, &iter);
-	}
+		void* iter = nullptr;
+		auto method = mono_class_get_methods(class_ptr, &iter);
 
+		while(method != nullptr)
+		{
+			auto sig = mono_method_signature(method);
+			char* mono_signature = mono_signature_get_desc(sig, false);
+			std::string signature(mono_signature);
+			mono_free(mono_signature);
+			std::string name = mono_method_get_name(method);
+			std::string fullname = name + "(" + signature + ")";
+			methods.emplace_back(get_method(fullname));
+			method = mono_class_get_methods(class_ptr, &iter);
+		}
+		if(include_base)
+		{
+			class_ptr = mono_class_get_parent(class_ptr);
+		}
+		else
+		{
+			break;
+		}
+	}
 	return methods;
 }
 
-auto mono_type::get_attributes() const -> std::vector<mono_object>
+auto mono_type::get_attributes(bool include_base) const -> std::vector<mono_object>
 {
 	std::vector<mono_object> result;
 
-	// Get custom attributes from the class
-	MonoCustomAttrInfo* attr_info = mono_custom_attrs_from_class(class_);
-
-	if(attr_info)
+	auto class_ptr = class_;
+	while(class_ptr)
 	{
-		result.reserve(attr_info->num_attrs);
-		// Iterate over the custom attributes
-		for(int i = 0; i < attr_info->num_attrs; ++i)
+		// Get custom attributes from the class
+		MonoCustomAttrInfo* attr_info = mono_custom_attrs_from_class(class_ptr);
+
+		if(attr_info)
 		{
-			MonoCustomAttrEntry* entry = &attr_info->attrs[i];
-
-			// Get the MonoClass* of the attribute
-			MonoClass* attr_class = mono_method_get_class(entry->ctor);
-
-			if(attr_class)
+			result.reserve(attr_info->num_attrs);
+			// Iterate over the custom attributes
+			for(int i = 0; i < attr_info->num_attrs; ++i)
 			{
-				MonoObject* attr_obj = mono_custom_attrs_get_attr(attr_info, attr_class);
-				// Add the attribute instance to the result vector
-				if(attr_obj)
+				MonoCustomAttrEntry* entry = &attr_info->attrs[i];
+
+				// Get the MonoClass* of the attribute
+				MonoClass* attr_class = mono_method_get_class(entry->ctor);
+
+				if(attr_class)
 				{
-					result.emplace_back(attr_obj);
+					MonoObject* attr_obj = mono_custom_attrs_get_attr(attr_info, attr_class);
+					// Add the attribute instance to the result vector
+					if(attr_obj)
+					{
+						result.emplace_back(attr_obj);
+					}
 				}
 			}
+			// Free the attribute info when done
+			mono_custom_attrs_free(attr_info);
 		}
-		// Free the attribute info when done
-		mono_custom_attrs_free(attr_info);
+
+		if(include_base)
+		{
+			class_ptr = mono_class_get_parent(class_ptr);
+		}
+		else
+		{
+			break;
+		}
 	}
 
 	return result;

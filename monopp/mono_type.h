@@ -44,13 +44,13 @@ public:
 
 	auto get_property(const std::string& name) const -> mono_property;
 
-	auto get_fields() const -> std::vector<mono_field>;
+	auto get_fields(bool include_base = false) const -> std::vector<mono_field>;
 
-	auto get_properties() const -> std::vector<mono_property>;
+	auto get_properties(bool include_base = false) const -> std::vector<mono_property>;
 
-	auto get_methods() const -> std::vector<mono_method>;
+	auto get_methods(bool include_base = false) const -> std::vector<mono_method>;
 
-	auto get_attributes() const -> std::vector<mono_object>;
+	auto get_attributes(bool include_base = false) const -> std::vector<mono_object>;
 
 	auto has_base_type() const -> bool;
 
