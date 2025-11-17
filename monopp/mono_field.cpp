@@ -48,8 +48,15 @@ void set_meta_info(MonoClassField* field, std::shared_ptr<mono_field::meta_info>
 } // namespace
 
 mono_field::mono_field(const mono_type& type, const std::string& name)
-	: field_(mono_class_get_field_from_name(type.get_internal_ptr(), name.c_str()))
 {
+	auto check_type = type;
+	while(!field_ && check_type.valid())
+	{
+		field_ = mono_class_get_field_from_name(check_type.get_internal_ptr(), name.c_str());
+		check_type = check_type.get_base_type();
+
+	}
+
 	if(!field_)
 	{
 		throw mono_exception("NATIVE::Could not get field : " + name + " for class " + type.get_name());
@@ -58,7 +65,7 @@ mono_field::mono_field(const mono_type& type, const std::string& name)
 
 	if(is_static())
 	{
-		owning_type_vtable_ = mono_class_vtable(domain.get_internal_ptr(), type.get_internal_ptr());
+		owning_type_vtable_ = mono_class_vtable(domain.get_internal_ptr(), check_type.get_internal_ptr());
 		//		mono_runtime_class_init(owning_type_vtable_);
 	}
 

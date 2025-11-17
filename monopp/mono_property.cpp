@@ -49,11 +49,18 @@ void set_meta_info(MonoProperty* property, std::shared_ptr<mono_property::meta_i
 } // namespace
 
 mono_property::mono_property(const mono_type& type, const std::string& name)
-	: property_(mono_class_get_property_from_name(type.get_internal_ptr(), name.c_str()))
 {
+	auto check_type = type;
+	while(!property_ && check_type.valid())
+	{
+		property_ = mono_class_get_property_from_name(check_type.get_internal_ptr(), name.c_str());
+		check_type = check_type.get_base_type();
+	}
 	if(!property_)
+	{
 		throw mono_exception("NATIVE::Could not get property : " + name + " for class " + type.get_name());
-
+	}
+	
 	auto get_method = get_get_method();
 	type_ = get_method.get_return_type();
 
