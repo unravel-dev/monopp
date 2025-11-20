@@ -541,26 +541,26 @@ auto mono_type::get_property(const std::string& name) const -> mono_property
 auto mono_type::get_fields(bool include_base) const -> std::vector<mono_field>
 {
 	std::vector<mono_field> fields;
+	std::vector<MonoClass*> hierarchy;
 	auto class_ptr = class_;
 	while(class_ptr)
 	{
+		hierarchy.push_back(class_ptr);
+		if(!include_base)
+		{
+			break;
+		}
+		class_ptr = mono_class_get_parent(class_ptr);
+	}
+	for(auto it = hierarchy.rbegin(); it != hierarchy.rend(); ++it)
+	{
 		void* iter = nullptr;
-		auto field = mono_class_get_fields(class_ptr, &iter);
+		auto field = mono_class_get_fields(*it, &iter);
 		while(field)
 		{
 			std::string name = mono_field_get_name(field);
-
 			fields.emplace_back(get_field(name));
-
-			field = mono_class_get_fields(class_ptr, &iter);
-		}
-		if(include_base)
-		{
-			class_ptr = mono_class_get_parent(class_ptr);
-		}
-		else
-		{
-			break;
+			field = mono_class_get_fields(*it, &iter);
 		}
 	}
 	return fields;
@@ -569,26 +569,27 @@ auto mono_type::get_fields(bool include_base) const -> std::vector<mono_field>
 auto mono_type::get_properties(bool include_base) const -> std::vector<mono_property>
 {
 	std::vector<mono_property> props;
+
+	std::vector<MonoClass*> hierarchy;
 	auto class_ptr = class_;
 	while(class_ptr)
 	{
+		hierarchy.push_back(class_ptr);
+		if(!include_base)
+		{
+			break;
+		}
+		class_ptr = mono_class_get_parent(class_ptr);
+	}
+	for(auto it = hierarchy.rbegin(); it != hierarchy.rend(); ++it)
+	{
 		void* iter = nullptr;
-		auto prop = mono_class_get_properties(class_ptr, &iter);
+		auto prop = mono_class_get_properties(*it, &iter);
 		while(prop)
 		{
 			std::string name = mono_property_get_name(prop);
-
 			props.emplace_back(get_property(name));
-
-			prop = mono_class_get_properties(class_ptr, &iter);
-		}
-		if(include_base)
-		{
-			class_ptr = mono_class_get_parent(class_ptr);
-		}
-		else
-		{
-			break;
+			prop = mono_class_get_properties(*it, &iter);
 		}
 	}
 	return props;
@@ -597,12 +598,21 @@ auto mono_type::get_properties(bool include_base) const -> std::vector<mono_prop
 auto mono_type::get_methods(bool include_base) const -> std::vector<mono_method>
 {
 	std::vector<mono_method> methods;
+	std::vector<MonoClass*> hierarchy;
 	auto class_ptr = class_;
 	while(class_ptr)
 	{
+		hierarchy.push_back(class_ptr);
+		if(!include_base)
+		{
+			break;
+		}
+		class_ptr = mono_class_get_parent(class_ptr);
+	}
+	for(auto it = hierarchy.rbegin(); it != hierarchy.rend(); ++it)
+	{
 		void* iter = nullptr;
-		auto method = mono_class_get_methods(class_ptr, &iter);
-
+		auto method = mono_class_get_methods(*it, &iter);
 		while(method != nullptr)
 		{
 			auto sig = mono_method_signature(method);
@@ -612,15 +622,7 @@ auto mono_type::get_methods(bool include_base) const -> std::vector<mono_method>
 			std::string name = mono_method_get_name(method);
 			std::string fullname = name + "(" + signature + ")";
 			methods.emplace_back(get_method(fullname));
-			method = mono_class_get_methods(class_ptr, &iter);
-		}
-		if(include_base)
-		{
-			class_ptr = mono_class_get_parent(class_ptr);
-		}
-		else
-		{
-			break;
+			method = mono_class_get_methods(*it, &iter);
 		}
 	}
 	return methods;
@@ -629,48 +631,38 @@ auto mono_type::get_methods(bool include_base) const -> std::vector<mono_method>
 auto mono_type::get_attributes(bool include_base) const -> std::vector<mono_object>
 {
 	std::vector<mono_object> result;
-
+	std::vector<MonoClass*> hierarchy;
 	auto class_ptr = class_;
 	while(class_ptr)
 	{
-		// Get custom attributes from the class
-		MonoCustomAttrInfo* attr_info = mono_custom_attrs_from_class(class_ptr);
-
+		hierarchy.push_back(class_ptr);
+		if(!include_base)
+		{
+			break;
+		}
+		class_ptr = mono_class_get_parent(class_ptr);
+	}
+	for(auto it = hierarchy.rbegin(); it != hierarchy.rend(); ++it)
+	{
+		MonoCustomAttrInfo* attr_info = mono_custom_attrs_from_class(*it);
 		if(attr_info)
 		{
-			result.reserve(attr_info->num_attrs);
-			// Iterate over the custom attributes
 			for(int i = 0; i < attr_info->num_attrs; ++i)
 			{
 				MonoCustomAttrEntry* entry = &attr_info->attrs[i];
-
-				// Get the MonoClass* of the attribute
 				MonoClass* attr_class = mono_method_get_class(entry->ctor);
-
 				if(attr_class)
 				{
 					MonoObject* attr_obj = mono_custom_attrs_get_attr(attr_info, attr_class);
-					// Add the attribute instance to the result vector
 					if(attr_obj)
 					{
 						result.emplace_back(attr_obj);
 					}
 				}
 			}
-			// Free the attribute info when done
 			mono_custom_attrs_free(attr_info);
 		}
-
-		if(include_base)
-		{
-			class_ptr = mono_class_get_parent(class_ptr);
-		}
-		else
-		{
-			break;
-		}
 	}
-
 	return result;
 }
 
