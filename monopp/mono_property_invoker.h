@@ -20,6 +20,18 @@ public:
 
 	auto get_value(const mono_object& obj) const -> T;
 
+	template <typename IndexArg>
+	auto get_value_with_args(IndexArg index) const -> T;
+
+	template <typename IndexArg>
+	auto get_value_with_args(const mono_object& obj, IndexArg index) const -> T;
+
+	template <typename IndexArg>
+	void set_value_with_args(IndexArg index, const T& val) const;
+
+	template <typename IndexArg>
+	void set_value_with_args(const mono_object& obj, IndexArg index, const T& val) const;
+
 private:
 	template <typename Signature>
 	friend auto make_property_invoker(const mono_property&) -> mono_property_invoker<Signature>;
@@ -56,6 +68,38 @@ auto mono_property_invoker<T>::get_value(const mono_object& object) const -> T
 {
 	auto thunk = make_method_invoker<T()>(get_get_method());
 	return thunk(object);
+}
+
+template <typename T>
+template <typename IndexArg>
+auto mono_property_invoker<T>::get_value_with_args(IndexArg index) const -> T
+{
+	auto thunk = make_method_invoker<T(IndexArg)>(get_get_method());
+	return thunk(index);
+}
+
+template <typename T>
+template <typename IndexArg>
+auto mono_property_invoker<T>::get_value_with_args(const mono_object& object, IndexArg index) const -> T
+{
+	auto thunk = make_method_invoker<T(IndexArg)>(get_get_method());
+	return thunk(object, index);
+}
+
+template <typename T>
+template <typename IndexArg>
+void mono_property_invoker<T>::set_value_with_args(IndexArg index, const T& val) const
+{
+	auto thunk = make_method_invoker<void(IndexArg, const T&)>(get_set_method());
+	thunk(index, val);
+}
+
+template <typename T>
+template <typename IndexArg>
+void mono_property_invoker<T>::set_value_with_args(const mono_object& object, IndexArg index, const T& val) const
+{
+	auto thunk = make_method_invoker<void(IndexArg, const T&)>(get_set_method());
+	thunk(object, index, val);
 }
 
 template <typename T>
