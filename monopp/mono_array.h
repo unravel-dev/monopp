@@ -338,7 +338,7 @@ public:
 
 	// Convert to std::vector like for primitive types
 	template<typename VectorLike = std::vector<mono_object>>
-	auto to_vector(bool create_null_elements = false) const -> VectorLike
+	auto to_vector() const -> VectorLike
 	{
 		auto element_type = get_element_type();
 		VectorLike vec(size());
