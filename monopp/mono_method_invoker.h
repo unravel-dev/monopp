@@ -82,12 +82,18 @@ private:
 	void invoke(const mono_object* obj, Args... args)
 	{
 		auto method = this->method_;
+		if(!method)
+		{
+			throw mono_exception("NATIVE::Method thunk requested with invalid method");
+		}
 		MonoObject* object = nullptr;
-		if(obj)
+		if(obj && obj->valid())
 		{
 			object = obj->get_internal_ptr();
-
-			method = mono_object_get_virtual_method(object, method);
+			if(object)
+			{
+				method = mono_object_get_virtual_method(object, method);
+			}
 		}
 		auto tup = std::make_tuple(mono_converter<std::decay_t<Args>>::to_mono(std::forward<Args>(args))...);
 
@@ -146,12 +152,19 @@ private:
 	auto invoke(const mono_object* obj, Args... args)
 	{
 		auto method = this->method_;
+		if(!method)
+		{
+			throw mono_exception("NATIVE::Method thunk requested with invalid method");
+		}
+
 		MonoObject* object = nullptr;
-		if(obj)
+		if(obj && obj->valid())
 		{
 			object = obj->get_internal_ptr();
-
-			method = mono_object_get_virtual_method(object, method);
+			if(object)
+			{
+				method = mono_object_get_virtual_method(object, method);
+			}
 		}
 		auto tup = std::make_tuple(mono_converter<std::decay_t<Args>>::to_mono(std::forward<Args>(args))...);
 		const auto& param_types = this->get_param_types();

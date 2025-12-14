@@ -291,13 +291,13 @@ public:
 			
 			// Box the value type
 			MonoObject* boxed = mono_value_box(domain, element_class, element_addr);
-			return mono_object(boxed);
+			return mono_object(boxed, element_type);
 		}
 		else
 		{
 			// For reference types, just get the MonoObject* directly
 			MonoObject* obj = mono_array_get(get_internal_array(), MonoObject*, index);
-			return mono_object(obj);
+			return mono_object(obj, element_type);
 		}
 	}
 
@@ -338,8 +338,9 @@ public:
 
 	// Convert to std::vector like for primitive types
 	template<typename VectorLike = std::vector<mono_object>>
-	auto to_vector() const -> VectorLike
+	auto to_vector(bool create_null_elements = false) const -> VectorLike
 	{
+		auto element_type = get_element_type();
 		VectorLike vec(size());
 		for(size_t i = 0; i < size(); ++i)
 		{
@@ -350,4 +351,57 @@ public:
 };
 
 
+} // namespace mono
+
+// Forward declare mono_converter to avoid including mono_type_conversion.h here
+namespace mono
+{
+	template <typename T>
+	struct mono_converter;
+}
+
+// mono_converter specializations for mono_array - moved here to break circular dependency
+namespace mono
+{
+template <typename T>
+struct mono_converter<mono_array<T>>
+{
+	using native_type = mono_array<T>;
+	using managed_type = MonoObject*;
+
+	static auto to_mono(const native_type& obj) -> managed_type
+	{
+		return obj.get_internal_ptr();
+	}
+
+	static auto from_mono(const managed_type& obj) -> native_type
+	{
+		if(!obj)
+		{
+			return {};
+		}
+		return mono_array<T>(mono_object(obj));
+	}
+};
+
+template <typename T>
+struct mono_converter<std::vector<T>>
+{
+	using native_type = std::vector<T>;
+	using managed_type = MonoObject*;
+
+	static auto to_mono(const native_type& obj) -> managed_type
+	{
+		return mono_array<T>(obj).get_internal_ptr();
+	}
+
+	static auto from_mono(const managed_type& obj) -> native_type
+	{
+		if(!obj)
+		{
+			return {};
+		}
+		return mono_array<T>(mono_object(obj)).to_vector();
+	}
+};
 } // namespace mono

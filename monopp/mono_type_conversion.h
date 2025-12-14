@@ -2,82 +2,22 @@
 
 #include "mono_config.h"
 
-#include "mono_array.h"
-#include "mono_list.h"
+#include "mono_type_conversion_base.h"
+// Forward declarations - converter specializations moved to respective headers to break circular dependency
+namespace mono { 
+	template <typename T> class mono_array; 
+	template <typename T> class mono_list; 
+}
 #include "mono_domain.h"
 #include "mono_string.h"
 #include "mono_type.h"
 #include "mono_type_traits.h"
+#include "mono_arg.h"
 
 namespace mono
 {
 
-// Forward declarations
-class mono_object;
 
-// Basic to_mono_arg for value types with type info
-template <typename T>
-inline auto to_mono_arg(T& t, const mono_type& type) -> void*
-{
-	static_assert(is_mono_valuetype<T>::value, "Should not pass here for non-pod types");
-	(void)type; // Suppress unused parameter warning
-	return std::addressof(t);
-}
-
-// Basic to_mono_arg for MonoObject*
-auto to_mono_arg(MonoObject* value_obj, const mono_type& type) -> void*;
-
-// Handle mono_object wrapper
-auto to_mono_arg(const mono_object& value, const mono_type& type) -> void*;
-
-template <typename T>
-auto check_type_layout(MonoObject* obj) -> bool
-{
-	mono_object object(obj);
-	const auto& type = object.get_type();
-	const auto mono_sz = type.get_sizeof();
-	const auto mono_align = type.get_alignof();
-	constexpr auto cpp_sz = sizeof(T);
-	constexpr auto cpp_align = alignof(T);
-
-	return mono_sz == cpp_sz && mono_align <= cpp_align;
-}
-
-template <typename T>
-struct mono_converter
-{
-	using native_type = T;
-	using managed_type = T;
-
-	static_assert(is_mono_valuetype<managed_type>::value, "Specialize converter for non-value types");
-
-	static auto to_mono(const native_type& obj) -> managed_type
-	{
-		return obj;
-	}
-
-	template <typename U>
-	static auto from_mono(U obj) -> std::enable_if_t<std::is_same<U, MonoObject*>::value, native_type>
-	{
-		assert(check_type_layout<managed_type>(obj) && "Different type layouts");
-		void* ptr = mono_object_unbox(obj);
-		return *reinterpret_cast<native_type*>(ptr);
-	}
-
-	template <typename U>
-	static auto from_mono(const U& obj)
-		-> std::enable_if_t<!std::is_same<U, MonoObject*>::value && !std::is_pointer<U>::value, const native_type&>
-	{
-		return obj;
-	}
-
-	template <typename U>
-	static auto from_mono(const U& ptr)
-		-> std::enable_if_t<!std::is_same<U, MonoObject*>::value && std::is_pointer<U>::value, native_type*>
-	{
-		return reinterpret_cast<native_type*>(ptr);
-	}
-};
 
 template <>
 struct mono_converter<mono_object>
@@ -153,90 +93,10 @@ struct mono_converter<std::string>
 	}
 };
 
-template <typename T>
-struct mono_converter<std::vector<T>>
-{
-	using native_type = std::vector<T>;
-	using managed_type = MonoObject*;
-
-	static auto to_mono(const native_type& obj) -> managed_type
-	{
-		return mono_array<T>(obj).get_internal_ptr();
-	}
-
-	static auto from_mono(const managed_type& obj) -> native_type
-	{
-		if(!obj)
-		{
-			return {};
-		}
-		return mono_array<T>(mono_object(obj)).to_vector();
-	}
-};
-
-template <typename T>
-struct mono_converter<mono_array<T>>
-{
-	using native_type = mono_array<T>;
-	using managed_type = MonoObject*;
-
-	static auto to_mono(const native_type& obj) -> managed_type
-	{
-		return obj.get_internal_ptr();
-	}
-
-	static auto from_mono(const managed_type& obj) -> native_type
-	{
-		if(!obj)
-		{
-			return {};
-		}
-		return mono_array<T>(mono_object(obj));
-	}
-};
-
-
-template <typename T>
-struct mono_converter<std::list<T>>
-{
-	using native_type = std::list<T>;
-	using managed_type = MonoObject*;
-
-	static auto to_mono(const native_type& obj) -> managed_type
-	{
-		return mono_list<T>(obj).get_internal_ptr();
-	}
-
-	static auto from_mono(const managed_type& obj) -> native_type
-	{
-		if(!obj)
-		{
-			return {};
-		}
-		return mono_list<T>(mono_object(obj)).to_list();
-	}
-};
-
-template <typename T>
-struct mono_converter<mono_list<T>>
-{
-	using native_type = mono_list<T>;
-	using managed_type = MonoObject*;
-
-	static auto to_mono(const native_type& obj) -> managed_type
-	{
-		return obj.get_internal_ptr();
-	}
-
-	static auto from_mono(const managed_type& obj) -> native_type
-	{
-		if(!obj)
-		{
-			return {};
-		}
-		return mono_list<T>(mono_object(obj));
-	}
-};
+// mono_converter specializations for std::vector<T> and mono_array<T> 
+// moved to mono_array.h to break circular dependency with mono_type_conversion.h
+// mono_converter specializations for std::list<T> and mono_list<T> 
+// moved to mono_list.h to break circular dependency with mono_type_conversion.h
 
 
 } // namespace mono

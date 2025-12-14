@@ -34,7 +34,13 @@ public:
 
 	auto get_attributes() const -> std::vector<mono_object>;
 
-	auto has_attribute(const std::string& attribute_full_name) const -> bool;
+	auto has_attribute_fullname(const std::string& attribute_full_name) const -> bool;
+
+	auto has_attribute(const std::string& attribute_name) const -> bool;
+
+	auto get_attribute_fullname(const std::string& attribute_full_name) const -> mono_object;
+	
+	auto get_attribute(const std::string& attribute_name) const -> mono_object;
 
 	auto is_readonly() const -> bool;
 

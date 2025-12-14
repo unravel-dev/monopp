@@ -206,24 +206,44 @@ auto mono_field::is_const() const -> bool
 	return (flags & MONO_FIELD_ATTR_LITERAL) != 0;
 }
 
-auto mono_field::has_attribute(const std::string& attribute_full_name) const -> bool
+auto mono_field::has_attribute_fullname(const std::string& attribute_full_name) const -> bool
 {
-	// Iterate over all custom‐attribute instances on this field:
+	return get_attribute_fullname(attribute_full_name).valid();
+}
+
+auto mono_field::has_attribute(const std::string& attribute_name) const -> bool
+{
+	return get_attribute(attribute_name).valid();
+}
+
+auto mono_field::get_attribute(const std::string& attribute_name) const -> mono_object
+{
+	for (auto& attr_obj : get_attributes())
+	{
+		if(attribute_name == attr_obj.get_type().get_name())
+		{
+			return attr_obj;
+		}
+	}
+	return mono_object();
+}
+
+auto mono_field::get_attribute_fullname(const std::string& attribute_full_name) const -> mono_object
+{
 	for (auto& attr_obj : get_attributes())
 	{
 		if(attribute_full_name == attr_obj.get_type().get_fullname())
 		{
-			return true;
+			return attr_obj;
 		}
 	}
-
-	return false;
+	return mono_object();
 }
 
 auto mono_field::is_backing_field() const -> bool
 {
 	// 2) auto-property backing fields are tagged [CompilerGenerated]
-	if(has_attribute("System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
+	if(has_attribute_fullname("System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
 		return true;
 
 	auto name = get_name();

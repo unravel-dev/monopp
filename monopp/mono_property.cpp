@@ -213,6 +213,39 @@ auto mono_property::get_attributes() const -> std::vector<mono_object>
 	return result;
 }
 
+auto mono_property::has_attribute_fullname(const std::string& attribute_full_name) const -> bool
+{
+	return get_attribute_fullname(attribute_full_name).valid();
+}
+
+auto mono_property::has_attribute(const std::string& attribute_name) const -> bool
+{
+	return get_attribute(attribute_name).valid();
+}
+
+auto mono_property::get_attribute(const std::string& attribute_name) const -> mono_object
+{
+	for (auto& attr_obj : get_attributes())
+	{
+		if(attribute_name == attr_obj.get_type().get_name())
+		{
+			return attr_obj;
+		}
+	}
+	return mono_object();
+}
+
+auto mono_property::get_attribute_fullname(const std::string& attribute_full_name) const -> mono_object
+{
+	for (auto& attr_obj : get_attributes())
+	{
+		if(attribute_full_name == attr_obj.get_type().get_fullname())
+		{
+			return attr_obj;
+		}
+	}
+	return mono_object();
+}
 auto mono_property::is_special_name() const -> bool
 {
 	uint32_t flags = mono_property_get_flags(property_);

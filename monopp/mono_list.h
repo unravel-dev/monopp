@@ -5,6 +5,9 @@
 #include "mono_exception.h"
 #include "mono_object.h"
 #include "mono_type_traits.h"
+#include "mono_property.h"
+#include "mono_method_invoker.h"
+#include "mono_property_invoker.h"
 
 #include <cstring>
 #include <list>
@@ -44,6 +47,36 @@ public:
 		invoke_method("Clear", nullptr, 0, &exc);
 		if(exc)
 			throw mono_exception("Exception calling List<T>.Clear()");
+	}
+	
+	// Remove an element at the specified index (List<T>.RemoveAt)
+	void remove_at(int32_t index)
+	{
+		void* args[1] = {&index};
+		MonoObject* exc = nullptr;
+		invoke_method("RemoveAt", args, 1, &exc);
+		if(exc)
+			throw mono_thunk_exception(exc);
+	}
+
+	// Get the element type T from List<T>
+	auto get_element_type() const -> mono_type
+	{
+		if(!object_)
+			return {};
+
+		// Use the "Item" property to get the element type
+		// List<T> has an indexer property "Item" that returns T
+		mono_type list_type = get_type();
+		if(!list_type.valid())
+			return {};
+
+		mono_property item_prop = list_type.get_property("Item");
+		if(!item_prop.get_internal_ptr())
+			return {};
+
+		// The return type of the "Item" property is the element type T
+		return item_prop.get_type();
 	}
 
 protected:
@@ -94,9 +127,9 @@ public:
 	{
 	}
 
-	auto craete_list(const mono_domain& domain) -> mono_object
+	auto create_list(const mono_domain& domain, const mono_type& type) -> mono_object
 	{
-		mono_type list_class(get_list_class_for_type());
+		mono_type list_class(get_list_class_for_type(type));
 		if(list_class.valid())
 		{
 			return list_class.new_instance(domain);
@@ -106,74 +139,94 @@ public:
 			return {};
 		}
 	}
-	// 2) Construct a brand new List<T> in the given domain from a std::list<T>
-	//    This uses a naive approach to locate the "System.Collections.Generic.List`1[System.Int32]"
-	//    (or whichever T) class, then calls the default constructor, and then 'Add' for each item.
-	mono_list(const mono_domain& domain, const std::list<T>& container)
-		: mono_list_base(craete_list(domain))
+
+	template<typename VectorLike = std::vector<T>>
+	mono_list(const VectorLike& vec)
+		: mono_list_base(create_list(mono_domain::get_current_domain(), vec.size(), {}))
+	{
+		for(auto& item : vec)
+		{
+			add(item);
+		}
+	}
+
+	template<typename VectorLike = std::vector<T>>
+	mono_list(const VectorLike& vec, const mono_type& element_type)
+		: mono_list_base(create_list(mono_domain::get_current_domain(), element_type))
+	{
+		for(auto& item : vec)
+		{
+			add(item);
+		}
+	}
+
+	template<typename VectorLike = std::vector<T>>
+	void set(const VectorLike& vec, const mono_type& element_type)
 	{
 		if(!valid())
 		{
-			throw mono_exception("Exception creating List<T>");
+			create_list(mono_domain::get_current_domain(), element_type);
 		}
-		// Create a new List<T> object in C#.
-		// We'll do a naive approach for certain known T's (int, float, etc.).
-		// If you need more advanced or custom T's, you'll need full generic reflection.
-
-		// Now populate via Add(value)
-		for(auto& item : container)
+		clear();
+		for(auto& item : vec)
 		{
-			add(item);
+			auto item_to_add = item;
+			if(!item_to_add.valid())
+			{
+				item_to_add = element_type.new_instance();
+			}
+			add(item_to_add);
+		}
+	}
+
+	void add()
+	{
+		auto item_prop = get_type().get_property("Item");
+		if(item_prop.get_internal_ptr())
+		{
+			auto item_obj = item_prop.get_type().new_instance();
+			add(item_obj);
 		}
 	}
 
 	// Add an item to the end of the list (List<T>.Add)
 	void add(const T& value)
 	{
-		// auto invoker = make_method_invoker<T>(get_type(), "Add");
-
-		void* args[1];
-		// For a primitive value, we can pass a pointer to it
-		// (Mono runtime will unbox/box as needed).
-		args[0] = (void*)&value;
-
-		MonoObject* exc = nullptr;
-		invoke_method("Add", args, 1, &exc);
-		if(exc)
-			throw mono_thunk_exception(exc);
+		auto invoker = make_method_invoker<void(const T&)>(get_type(), "Add");
+		invoker(*this, value);
 	}
 
 	// Retrieve an element by index (List<T>.get_Item)
 	auto get(std::size_t index) const -> T
 	{
-		int idx = static_cast<int>(index); // method signature is int
-		void* args[1] = {&idx};
-
-		MonoObject* exc = nullptr;
-		MonoObject* result = invoke_method("get_Item", args, 1, &exc);
-		if(exc)
-			throw mono_thunk_exception(exc);
-
-		// For T=primitive, we unbox
-		return *reinterpret_cast<T*>(mono_object_unbox(result));
+		int idx = static_cast<int>(index);
+		auto invoker = make_property_invoker<T>(get_type(), "Item");
+		return invoker.get_value_with_args(*this, idx);
 	}
 
 	// Set an element by index (List<T>.set_Item)
 	void set(std::size_t index, const T& value)
 	{
 		int idx = static_cast<int>(index);
-		void* args[2] = {&idx, (void*)&value};
-
-		MonoObject* exc = nullptr;
-		invoke_method("set_Item", args, 2, &exc);
-		if(exc)
-			throw mono_thunk_exception(exc);
+		auto invoker = make_property_invoker<T>(get_type(), "Item");
+		invoker.set_value_with_args(*this, idx, value);
 	}
 
 	// Convert managed List<T> to a std::list<T>
 	auto to_list() const -> std::list<T>
 	{
 		std::list<T> result;
+		std::size_t n = size();
+		for(std::size_t i = 0; i < n; i++)
+		{
+			result.push_back(get(i));
+		}
+		return result;
+	}
+
+	auto to_vector() const -> std::vector<T>
+	{
+		std::vector<T> result;
 		std::size_t n = size();
 		for(std::size_t i = 0; i < n; i++)
 		{
@@ -247,7 +300,7 @@ private:
 	}
 	// Locate the closed generic type List<T> for certain trivial T's
 	// using known Mono APIs (naive approach).
-	static auto get_list_class_for_type() -> MonoClass*
+	static auto get_list_class_for_type(const mono_type& element_type) -> MonoClass*
 	{
 		// For demonstration, let's assume we only handle int32.
 		// If T= int32_t => System.Int32
@@ -265,7 +318,11 @@ private:
 			return nullptr;
 
 		// 2) Decide on the T. We'll do a small example:
-		MonoClass* elementMonoClass = mono_class_from_element_type();
+		MonoClass* elementMonoClass = element_type.get_internal_ptr();
+		if(!elementMonoClass)
+		{
+			elementMonoClass = mono_class_from_element_type();
+		}
 		if(!elementMonoClass)
 		{
 			return nullptr;
@@ -356,66 +413,57 @@ private:
 	}
 };
 
-//------------------------------------------------------------------------------
-// Specialization for mono_list<mono_object> (reference types):
-// You could do something similar to handle user-defined classes, etc.
-//------------------------------------------------------------------------------
-template <>
-class mono_list<mono_object> : public mono_list_base
+} // namespace mono
+
+// Forward declare mono_converter to avoid including mono_type_conversion.h here
+namespace mono
 {
-public:
-	explicit mono_list(const mono_object& obj)
-		: mono_list_base(obj)
+	template <typename T>
+	struct mono_converter;
+}
+
+// mono_converter specializations for mono_list - moved here to break circular dependency
+namespace mono
+{
+template <typename T>
+struct mono_converter<mono_list<T>>
+{
+	using native_type = mono_list<T>;
+	using managed_type = MonoObject*;
+
+	static auto to_mono(const native_type& obj) -> managed_type
 	{
+		return obj.get_internal_ptr();
 	}
 
-	// For demonstration, we won't implement the new-from-list constructor
-	// because that requires building a generic List<object> type (and maybe an array of objects).
-	// But if you needed it, you'd do it similarly: create a List<object>, call Add, etc.
-
-	// size() and clear() come from base class
-
-	void add(const mono_object& obj)
+	static auto from_mono(const managed_type& obj) -> native_type
 	{
-		void* args[1] = {(void*)obj.get_internal_ptr()};
-		MonoObject* exc = nullptr;
-		invoke_method("Add", args, 1, &exc);
-		if(exc)
-			throw mono_thunk_exception(exc);
-	}
-
-	auto get(std::size_t index) const -> mono_object
-	{
-		int idx = static_cast<int>(index);
-		void* args[1] = {&idx};
-		MonoObject* exc = nullptr;
-		MonoObject* result = invoke_method("get_Item", args, 1, &exc);
-		if(exc)
-			throw mono_thunk_exception(exc);
-
-		return mono_object(result);
-	}
-
-	void set(std::size_t index, const mono_object& value)
-	{
-		int idx = static_cast<int>(index);
-		void* args[2] = {&idx, (void*)value.get_internal_ptr()};
-		MonoObject* exc = nullptr;
-		invoke_method("set_Item", args, 2, &exc);
-		if(exc)
-			throw mono_thunk_exception(exc);
-	}
-
-	auto to_list() const -> std::list<mono_object>
-	{
-		std::list<mono_object> result;
-		std::size_t n = size();
-		for(std::size_t i = 0; i < n; i++)
+		if(!obj)
 		{
-			result.push_back(get(i));
+			return {};
 		}
-		return result;
+		return mono_list<T>(mono_object(obj));
 	}
 };
 
+template <typename T>
+struct mono_converter<std::list<T>>
+{
+	using native_type = std::list<T>;
+	using managed_type = MonoObject*;
+
+	static auto to_mono(const native_type& obj) -> managed_type
+	{
+		return mono_list<T>(obj).get_internal_ptr();
+	}
+
+	static auto from_mono(const managed_type& obj) -> native_type
+	{
+		if(!obj)
+		{
+			return {};
+		}
+		return mono_list<T>(mono_object(obj)).to_list();
+	}
+};
 } // namespace mono

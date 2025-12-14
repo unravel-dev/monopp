@@ -14,6 +14,11 @@ public:
 
 	void lock();
 	void unlock();
+	
+	auto is_locked() const -> bool
+	{
+		return handle_ != 0;
+	}
 
 private:
 	std::uint32_t handle_ = 0;

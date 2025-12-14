@@ -10,7 +10,10 @@ namespace mono
 void mono_gc_handle::lock()
 {
 	assert(handle_ == 0);
-	handle_ = mono_gchandle_new(object_, 1);
+	if(object_)
+	{
+		handle_ = mono_gchandle_new(object_, 1);
+	}
 }
 
 void mono_gc_handle::unlock()

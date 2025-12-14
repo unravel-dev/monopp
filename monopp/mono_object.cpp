@@ -18,6 +18,12 @@ mono_object::mono_object(MonoObject* object)
 	}
 }
 
+mono_object::mono_object(MonoObject* object, const mono_type& type)
+	: type_(type)
+    , object_(object)
+{
+}
+
 mono_object::mono_object(const mono_domain& domain, const mono_type& type)
 	: type_(type)
 {
@@ -55,9 +61,19 @@ mono_object::operator bool() const
 	return valid();
 }
 
+auto mono_object::is_valid_mono_object() const -> bool
+{
+	if(!object_)
+	{
+		return false;
+	}
+	return mono_object_get_class(object_) != nullptr;
+}
+
 auto mono_object::get_internal_ptr() const -> MonoObject*
 {
 	return object_;
 }
+
 
 } // namespace mono
