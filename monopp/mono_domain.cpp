@@ -40,6 +40,18 @@ auto mono_managed_gc_collect(std::string& err) -> bool
 		return false;
 	}
 }
+
+auto split_fullname(const std::string& fullname) -> std::pair<std::string, std::string>
+{
+	auto pos = fullname.find_last_of('.');
+	if(pos == std::string::npos)
+	{
+		return std::make_pair("", fullname);
+	}
+	auto name_space = fullname.substr(0, pos);
+	auto name = fullname.substr(pos + 1);
+	return std::make_pair(std::move(name_space), std::move(name));
+}
 } // namespace
 static const mono_domain* current_domain = nullptr;
 
@@ -151,6 +163,12 @@ auto mono_domain::get_type(const std::string& name) const -> mono_type
 			return type;
 		}
 	}
+
+	auto type = mono_assembly::get_corlib().get_type(name);
+	if(type.valid())
+	{
+		return type;
+	}
 	return {};
 }
 
@@ -163,6 +181,34 @@ auto mono_domain::get_type(const std::string& name_space, const std::string& nam
 		{
 			return type;
 		}
+	}
+	
+	auto type = mono_assembly::get_corlib().get_type(name_space, name);
+	if(type.valid())
+	{
+		return type;
+	}
+	return {};
+}
+
+auto mono_domain::get_type_by_fullname(const std::string& fullname) const -> mono_type
+{
+	auto kvp = split_fullname(fullname);
+	const auto& name_space = kvp.first;
+	const auto& name = kvp.second;
+	for(const auto& assembly : assemblies_)
+	{
+		auto type = assembly.second.get_type(name_space, name);
+		if(type.valid())
+		{
+			return type;
+		}
+	}
+
+	auto type = mono_assembly::get_corlib().get_type(name_space, name);
+	if(type.valid())
+	{
+		return type;
 	}
 	return {};
 }

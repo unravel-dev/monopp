@@ -1,5 +1,6 @@
 #include "mono_object.h"
 #include "mono_domain.h"
+#include "mono_string.h"
 
 namespace mono
 {
@@ -38,6 +39,11 @@ mono_object::mono_object(const mono_domain& domain, const mono_type& type)
 
         // Box the value into a MonoObject
         object_ = mono_value_box(domain.get_internal_ptr(), klass, buffer);
+    }
+    else if(type_.is_string())
+    {
+        auto mstring = domain.new_string("");
+        object_ = mstring.get_internal_ptr();
     }
     else
     {

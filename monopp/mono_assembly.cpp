@@ -69,6 +69,11 @@ auto read_stream_into_container(std::basic_istream<CharT, Traits>& in, Container
 }
 } // namespace
 
+mono_assembly::mono_assembly(MonoImage* image)
+	: image_(image)
+{
+}
+
 mono_assembly::mono_assembly(const mono_domain& domain, const std::string& path, bool shared)
 {
 	if(shared)
@@ -121,6 +126,11 @@ auto mono_assembly::get_type(const std::string& name) const -> mono_type
 auto mono_assembly::get_type(const std::string& name_space, const std::string& name) const -> mono_type
 {
 	return mono_type(image_, name_space, name);
+}
+
+auto mono_assembly::get_corlib() -> mono_assembly
+{
+	return mono_assembly(mono_get_corlib());
 }
 
 std::vector<mono_type> mono_assembly::get_types() const

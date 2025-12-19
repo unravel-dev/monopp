@@ -91,9 +91,12 @@ public:
 
 	auto get_alignof() const -> std::uint32_t;
 
-	bool is_abstract() const;
-	bool is_sealed() const;
-	bool is_interface() const;
+	auto is_abstract() const -> bool;
+	auto is_sealed() const -> bool;
+	auto is_interface() const -> bool;
+	auto is_serializable() const -> bool;
+	auto is_string() const -> bool;
+	auto is_list() const -> bool;
 
 	auto get_internal_ptr() const -> MonoClass*;
 
@@ -102,6 +105,8 @@ public:
 
 private:
 	auto get_name(bool full) const -> std::string;
+	auto get_array_element_type() const -> mono_type;
+	auto get_list_element_type() const -> mono_type;
 
 	void generate_meta();
 

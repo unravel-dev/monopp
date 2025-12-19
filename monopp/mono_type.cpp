@@ -464,23 +464,8 @@ mono_type::mono_type(MonoImage* image, const std::string& name)
 }
 
 mono_type::mono_type(MonoImage* image, const std::string& name_space, const std::string& name)
+	: mono_type(mono_class_from_name(image, name_space.c_str(), name.c_str()))
 {
-	class_ = mono_class_from_name(image, name_space.c_str(), name.c_str());
-
-	if(!class_)
-	{
-		if(name_space.empty())
-		{
-			throw mono_exception("NATIVE::Could not get class : " + name);
-		}
-		
-		else
-		{
-			throw mono_exception("NATIVE::Could not get class : " + name_space + "." + name);
-		}
-	}
-
-	generate_meta();
 }
 
 mono_type::mono_type(MonoClass* cls)
@@ -496,10 +481,11 @@ mono_type::mono_type(MonoType* type)
 	if(type)
 	{
 		class_ = mono_class_from_mono_type(type);
-		if(!class_)
-			throw mono_exception("NATIVE::Could not get class");
 
-		generate_meta();
+		if(class_)
+		{
+			generate_meta();
+		}
 	}
 }
 auto mono_type::valid() const -> bool
@@ -890,13 +876,35 @@ auto mono_type::is_array() const -> bool
 
 auto mono_type::get_element_type() const -> mono_type
 {
-	if (!class_ || !is_array())
+	if (!class_)
 	{
 		return {};
 	}
 	
+	if(is_array())
+	{
+		return get_array_element_type();
+	}
+	if(is_list())
+	{
+		return get_list_element_type();
+	}
+	return {};
+}
+
+auto mono_type::get_array_element_type() const -> mono_type
+{	
 	MonoClass* element_class = mono_class_get_element_class(class_);
 	return mono_type(element_class);
+}
+auto mono_type::get_list_element_type() const -> mono_type
+{
+	mono_property item_prop = get_property("Item");
+	if(!item_prop.get_internal_ptr())
+		return {};
+
+	// The return type of the "Item" property is the element type T
+	return item_prop.get_type();
 }
 
 auto mono_type::get_sizeof() const -> uint32_t
@@ -935,6 +943,22 @@ auto mono_type::is_interface() const -> bool
 	return (mono_class_get_flags(class_) & MONO_TYPE_ATTR_INTERFACE) != 0;
 }
 
+auto mono_type::is_serializable() const -> bool
+{
+	return (mono_class_get_flags(class_) & MONO_TYPE_ATTR_SERIALIZABLE) != 0;
+}
+
+auto mono_type::is_string() const -> bool
+{
+	return class_ == mono_get_string_class();
+}
+
+auto mono_type::is_list() const -> bool
+{
+	// Check if it's a generic List<T>
+	auto fullname = get_fullname();
+	return fullname.find("System.Collections.Generic.List<") == 0;
+}
 void reset_type_cache()
 {
 	auto& cache = get_type_cache();

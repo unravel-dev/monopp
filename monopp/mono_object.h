@@ -42,13 +42,19 @@ public:
 	}
 
 	template<typename T>
-	auto unbox_value() -> T
+	auto unbox_value() const -> T
 	{
 		static_assert(is_mono_valuetype<T>::value, "Should not pass here for non-value types");
 		void* ptr = mono_object_unbox(get_internal_ptr());
 		return *reinterpret_cast<T*>(ptr);
 	}
 protected:
+    void set_data(MonoObject* object, const mono_type& type)
+    {
+        object_ = object;
+        type_ = type;
+    }
+
 	mono_type type_;
 
 	non_owning_ptr<MonoObject> object_ = nullptr;

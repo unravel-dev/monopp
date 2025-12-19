@@ -8,6 +8,7 @@
 #include "mono_property.h"
 #include "mono_method_invoker.h"
 #include "mono_property_invoker.h"
+#include "mono_array.h"
 
 #include <cstring>
 #include <list>
@@ -62,21 +63,7 @@ public:
 	// Get the element type T from List<T>
 	auto get_element_type() const -> mono_type
 	{
-		if(!object_)
-			return {};
-
-		// Use the "Item" property to get the element type
-		// List<T> has an indexer property "Item" that returns T
-		mono_type list_type = get_type();
-		if(!list_type.valid())
-			return {};
-
-		mono_property item_prop = list_type.get_property("Item");
-		if(!item_prop.get_internal_ptr())
-			return {};
-
-		// The return type of the "Item" property is the element type T
-		return item_prop.get_type();
+		return get_type().get_element_type();
 	}
 
 protected:
@@ -165,18 +152,39 @@ public:
 	{
 		if(!valid())
 		{
-			create_list(mono_domain::get_current_domain(), element_type);
+			auto new_list = create_list(mono_domain::get_current_domain(), element_type);
+			set_data(new_list.get_internal_ptr(), element_type);
 		}
-		clear();
-		for(auto& item : vec)
+
+		auto sz = size();
+		for(std::size_t i = 0; i < vec.size(); i++)
 		{
-			auto item_to_add = item;
-			if(!item_to_add.valid())
+			auto item = vec[i];
+			if(!item.valid())
 			{
-				item_to_add = element_type.new_instance();
+				item = element_type.new_instance();
 			}
-			add(item_to_add);
+
+			if(i < sz)
+			{
+				set(i, item);
+			}
+			else
+			{
+				add(item);
+			}
 		}
+
+		// clear();
+		// for(auto& item : vec)
+		// {
+		// 	auto item_to_add = item;
+		// 	if(!item_to_add.valid())
+		// 	{
+		// 		item_to_add = element_type.new_instance();
+		// 	}
+		// 	add(item_to_add);
+		// }
 	}
 
 	void add()
@@ -224,15 +232,22 @@ public:
 		return result;
 	}
 
-	auto to_vector() const -> std::vector<T>
+	template<typename VectorLike = std::vector<T>>
+	auto to_vector() const -> VectorLike
 	{
-		std::vector<T> result;
-		std::size_t n = size();
-		for(std::size_t i = 0; i < n; i++)
+		auto element_type = get_element_type();
+		VectorLike vec(size());
+		for(size_t i = 0; i < size(); ++i)
 		{
-			result.push_back(get(i));
+			vec[i] = get(i);
 		}
-		return result;
+		return vec;
+	}
+
+	template<typename VectorLike = std::vector<T>>
+	auto to_vector_wrapper() const -> vector_like_wrapper<VectorLike>
+	{
+		return {get_element_type(), to_vector<VectorLike>()};
 	}
 
 private:
