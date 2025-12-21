@@ -98,7 +98,8 @@ void test_suite()
 		{
 			auto assembly = domain.get_assembly(DATA_DIR "tests_managed.dll");
 
-			EXPECT_THROWS(assembly.get_type("SometypeThatDoesntExist12345"));
+			auto type = assembly.get_type("SometypeThatDoesntExist12345");
+			EXPECT(!type.valid());
 		};
 		EXPECT_NOTHROWS(expression());
 	};
@@ -108,7 +109,8 @@ void test_suite()
 		auto expression = [&]()
 		{
 			auto assembly = domain.get_assembly(DATA_DIR "tests_managed.dll");
-			assembly.get_type("Tests", "MonoppTest");
+			auto type = assembly.get_type("Tests", "MonoppTest");
+			EXPECT(type.valid());
 		};
 		EXPECT_NOTHROWS(expression());
 	};

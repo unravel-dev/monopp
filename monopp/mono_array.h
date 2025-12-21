@@ -271,16 +271,16 @@ public:
 		if(!valid())
 		{
 			auto new_array = create_array(mono_domain::get_current_domain(), element_type, vec.size());
-			set_data(reinterpret_cast<MonoObject*>(new_array), element_type);
+			set_value(reinterpret_cast<MonoObject*>(new_array));
 		}
 		
 		for(size_t i = 0; i < vec.size(); i++)
 		{
 			auto item = vec[i];
-			// if(!item.valid())
-			// {
-			// 	item = element_type.new_instance();
-			// }
+			if(!item.valid())
+			{
+				item = element_type.new_instance();
+			}
 			set(i, item);
 		}
 	}
@@ -357,6 +357,10 @@ public:
 		for(size_t i = 0; i < size(); ++i)
 		{
 			vec[i] = get(i);
+			if(!vec[i].get_type().valid())
+			{
+				vec[i] = mono_object(nullptr, element_type);
+			}
 		}
 		return vec;
 	}

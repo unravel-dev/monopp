@@ -48,12 +48,24 @@ public:
 		void* ptr = mono_object_unbox(get_internal_ptr());
 		return *reinterpret_cast<T*>(ptr);
 	}
-protected:
-    void set_data(MonoObject* object, const mono_type& type)
+
+	void set_value(MonoObject* object, const mono_type& type)
     {
         object_ = object;
         type_ = type;
     }
+
+	void set_value(MonoObject* object)
+    {
+        object_ = object;
+		if(object_)
+		{
+			type_ = mono_type(mono_object_get_class(object));
+		}    
+	}
+protected:
+
+
 
 	mono_type type_;
 

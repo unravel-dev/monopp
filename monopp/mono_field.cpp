@@ -65,8 +65,11 @@ mono_field::mono_field(const mono_type& type, const std::string& name)
 
 	if(is_static())
 	{
-		owning_type_vtable_ = mono_class_vtable(domain.get_internal_ptr(), check_type.get_internal_ptr());
-		//		mono_runtime_class_init(owning_type_vtable_);
+		// Get the class that actually owns this field (may be different from type if field is inherited)
+		MonoClass* owning_class = mono_field_get_parent(field_);
+		owning_type_vtable_ = mono_class_vtable(domain.get_internal_ptr(), owning_class);
+		// Initialize the class to ensure static fields are initialized
+		mono_runtime_class_init(owning_type_vtable_);
 	}
 
 	auto field_type = mono_field_get_type(field_);

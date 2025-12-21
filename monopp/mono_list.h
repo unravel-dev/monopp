@@ -153,38 +153,22 @@ public:
 		if(!valid())
 		{
 			auto new_list = create_list(mono_domain::get_current_domain(), element_type);
-			set_data(new_list.get_internal_ptr(), element_type);
+			set_value(new_list.get_internal_ptr());
 		}
 
-		auto sz = size();
-		for(std::size_t i = 0; i < vec.size(); i++)
+		clear();
+		for(auto& item : vec)
 		{
-			auto item = vec[i];
-			if(!item.valid())
+			auto item_to_add = item;
+			if(!item_to_add.valid())
 			{
-				item = element_type.new_instance();
+				item_to_add = element_type.new_instance();
 			}
-
-			if(i < sz)
-			{
-				set(i, item);
-			}
-			else
-			{
-				add(item);
-			}
+			add(item_to_add);
 		}
 
-		// clear();
-		// for(auto& item : vec)
-		// {
-		// 	auto item_to_add = item;
-		// 	if(!item_to_add.valid())
-		// 	{
-		// 		item_to_add = element_type.new_instance();
-		// 	}
-		// 	add(item_to_add);
-		// }
+		auto new_vector = to_vector<VectorLike>();
+		(void)new_vector;
 	}
 
 	void add()
@@ -240,6 +224,10 @@ public:
 		for(size_t i = 0; i < size(); ++i)
 		{
 			vec[i] = get(i);
+			if(!vec[i].get_type().valid())
+			{
+				vec[i] = mono_object(nullptr, element_type);
+			}
 		}
 		return vec;
 	}
