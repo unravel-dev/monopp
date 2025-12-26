@@ -18,6 +18,10 @@ namespace mono
 template <typename T>
 auto is_compatible_type(const mono_type& type) -> bool
 {
+	if(type.is_enum())
+	{
+		return is_compatible_type<T>(type.get_enum_base_type());
+	}
 	const auto& expected_name = type.get_fullname();
 	return types::is_compatible_type<T>(expected_name);
 }

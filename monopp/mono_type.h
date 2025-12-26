@@ -58,6 +58,8 @@ public:
 
 	auto get_nested_types() const -> std::vector<mono_type>;
 
+	auto get_nesting_type() const -> mono_type;
+
 	auto is_derived_from(const mono_type& type) const -> bool;
 
 	auto get_namespace() const -> std::string;
@@ -107,6 +109,7 @@ private:
 	auto get_name(bool full) const -> std::string;
 	auto get_array_element_type() const -> mono_type;
 	auto get_list_element_type() const -> mono_type;
+	void gather_nested_types_recursive(std::vector<mono_type>& nested_types) const;
 
 	void generate_meta();
 

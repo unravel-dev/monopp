@@ -115,6 +115,25 @@ void test_suite()
 		EXPECT_NOTHROWS(expression());
 	};
 
+	TEST_CASE("get nested monopp valid type")
+	{
+		auto expression = [&]()
+		{
+			auto assembly = domain.get_assembly(DATA_DIR "tests_managed.dll");
+			auto type = assembly.get_type("Tests.Nested", "TestClassNested1");
+			EXPECT(type.valid());
+
+			auto type2 = assembly.get_type("Tests.Nested.TestClassNested1");
+			EXPECT(type.valid());
+
+			auto type3 = assembly.get_type("Tests.Nested.TestClassNested1.TestClassNested2");
+			EXPECT(type3.valid());
+
+		};
+		EXPECT_NOTHROWS(expression());
+	};
+
+
 	TEST_CASE("get valid method")
 	{
 		auto expression = [&]()

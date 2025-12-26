@@ -67,6 +67,89 @@ auto read_stream_into_container(std::basic_istream<CharT, Traits>& in, Container
 
 	return in.good() || in.eof();
 }
+
+namespace
+{
+static auto split_tokens(const std::string& s) -> std::vector<std::string>
+{
+    // allow both '.' and '+' as separators in input
+    std::vector<std::string> out;
+    size_t start = 0;
+    while (start < s.size())
+    {
+        size_t sep = s.find_first_of(".+", start);
+        if (sep == std::string::npos)
+        {
+            out.push_back(s.substr(start));
+            break;
+        }
+        out.push_back(s.substr(start, sep - start));
+        start = sep + 1;
+    }
+    return out;
+}
+
+static MonoClass* find_direct_nested(MonoClass* outer, const std::string& nested_name)
+{
+    if (!outer) return nullptr;
+    mono_class_init(outer);
+
+    void* iter = nullptr;
+    while (MonoClass* nested = mono_class_get_nested_types(outer, &iter))
+    {
+        const char* n = mono_class_get_name(nested);
+        if (n && nested_name == n)
+            return nested;
+    }
+    return nullptr;
+}
+
+static MonoClass* class_from_fullname_guessing(MonoImage* image, const std::string& full)
+{
+    if (!image || full.empty()) return nullptr;
+
+    auto parts = split_tokens(full);
+    if (parts.empty()) return nullptr;
+
+    // Try all possible splits:
+    // namespace = parts[0..outer_idx-1], outer = parts[outer_idx], nested = parts[outer_idx+1..]
+    for (size_t outer_idx = 0; outer_idx < parts.size(); ++outer_idx)
+    {
+        // Build namespace candidate
+        std::string ns;
+        for (size_t i = 0; i < outer_idx; ++i)
+        {
+            if (i) ns.push_back('.');
+            ns.append(parts[i].data(), parts[i].size());
+        }
+
+        std::string outer(parts[outer_idx].data(), parts[outer_idx].size());
+        if (outer.empty())
+            continue;
+
+        MonoClass* klass = mono_class_from_name(image, ns.c_str(), outer.c_str());
+        if (!klass)
+            continue;
+
+        bool ok = true;
+        for (size_t ni = outer_idx + 1; ni < parts.size(); ++ni)
+        {
+            klass = find_direct_nested(klass, parts[ni]);
+            if (!klass)
+            {
+                ok = false;
+                break;
+            }
+        }
+
+        if (ok)
+            return klass;
+    }
+
+    return nullptr;
+}
+} // namespace
+
 } // namespace
 
 mono_assembly::mono_assembly(MonoImage* image)
@@ -118,14 +201,60 @@ mono_assembly::mono_assembly(const mono_domain& domain, const std::string& path,
 	}
 }
 
-auto mono_assembly::get_type(const std::string& name) const -> mono_type
+auto mono_assembly::get_type(const std::string& full_or_simple_name) const -> mono_type
 {
-	return mono_type(image_, name);
+	// Fast path: old behavior for non-nested: try as (namespace="", name=simple)
+	{
+		mono_type t(image_, "", full_or_simple_name);
+		if (t.valid())
+			return t;
+	}
+
+	// If it contains '.' or '+', it might be namespaced or nested
+	if (full_or_simple_name.find('.') != std::string::npos ||
+		full_or_simple_name.find('+') != std::string::npos)
+	{
+		if (MonoClass* cls = class_from_fullname_guessing(image_, full_or_simple_name))
+			return mono_type(cls);
+	}
+
+	// Fallback: maybe it's a non-nested full name "Ns1.Ns2.Type"
+	// Try splitting into (namespace, name) at last '.'
+	const size_t lastDot = full_or_simple_name.find_last_of('.');
+	if (lastDot != std::string::npos)
+	{
+		std::string ns = full_or_simple_name.substr(0, lastDot);
+		std::string n  = full_or_simple_name.substr(lastDot + 1);
+		mono_type t(image_, ns, n);
+		if (t.valid())
+			return t;
+	}
+
+	return {};
 }
 
 auto mono_assembly::get_type(const std::string& name_space, const std::string& name) const -> mono_type
 {
-	return mono_type(image_, name_space, name);
+	// If it's a plain name, keep old behavior
+	if (name.find('.') == std::string::npos && name.find('+') == std::string::npos)
+	{
+		return mono_type(image_, name_space, name);
+	}
+
+    // Otherwise, resolve "name_space + '.' + name" as a full name
+    std::string full = name_space;
+    if (!full.empty()) 
+	{
+		full.push_back('.');
+	}
+    full += name;
+
+    if (MonoClass* cls = class_from_fullname_guessing(image_, full))
+	{
+		return mono_type(cls);
+	}
+
+	return {};
 }
 
 auto mono_assembly::get_corlib() -> mono_assembly

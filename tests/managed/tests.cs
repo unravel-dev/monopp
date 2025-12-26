@@ -4,6 +4,18 @@ using System.Runtime.CompilerServices;
 namespace Tests
 {
 
+namespace Nested
+{
+class TestClassNested1
+{
+	class TestClassNested2
+	{
+		public int someField = 12;
+	}
+	public int someField = 12;
+}	
+}	
+
 class MyObject
 {
 public

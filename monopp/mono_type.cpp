@@ -455,6 +455,19 @@ std::vector<std::pair<T, std::string>> get_enum_options(MonoClass* enumClass)
 
 	return options;
 }
+
+const char* get_owning_namespace(MonoClass* klass)
+{
+    if (!klass) return "";
+
+    // Walk up to the top-level declaring type
+    MonoClass* cur = klass;
+    while (MonoClass* parent = mono_class_get_nesting_type(cur))
+        cur = parent;
+
+    const char* ns = mono_class_get_namespace(cur);
+    return ns ? ns : "";
+}
 } // namespace
 mono_type::mono_type() = default;
 
@@ -663,16 +676,29 @@ auto mono_type::get_base_type() const -> mono_type
 	return mono_type(base);
 }
 
-auto mono_type::get_nested_types() const -> std::vector<mono_type>
+void mono_type::gather_nested_types_recursive(std::vector<mono_type>& nested_types) const
 {
 	void* iter = nullptr;
 	auto nested = mono_class_get_nested_types(class_, &iter);
-	std::vector<mono_type> nested_clases;
 	while(nested)
 	{
-		nested_clases.emplace_back(mono_type(nested));
+		mono_type nested_type(nested);
+		nested_types.emplace_back(nested_type);
+		nested_type.gather_nested_types_recursive(nested_types);
+		nested = mono_class_get_nested_types(class_, &iter);
 	}
-	return nested_clases;
+}
+
+auto mono_type::get_nesting_type() const -> mono_type
+{
+	return mono_type(mono_class_get_nesting_type(class_));
+}
+
+auto mono_type::get_nested_types() const -> std::vector<mono_type>
+{
+	std::vector<mono_type> nested_types;
+	gather_nested_types_recursive(nested_types);
+	return nested_types;
 }
 
 auto mono_type::get_internal_ptr() const -> MonoClass*
@@ -708,7 +734,11 @@ auto mono_type::is_derived_from(const mono_type& type) const -> bool
 }
 auto mono_type::get_namespace() const -> std::string
 {
-	return mono_class_get_namespace(class_);
+	if(meta_)
+	{
+		return meta_->name_space;
+	}
+	return get_owning_namespace(class_);
 }
 auto mono_type::get_name() const -> std::string
 {
