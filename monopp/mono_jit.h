@@ -72,6 +72,7 @@ auto compile(const compiler_params& params) -> bool;
 
 auto get_common_library_names() -> const std::vector<std::string>&;
 auto get_common_library_paths() -> const std::vector<std::string>&;
+auto get_common_library_names_for_deploy() -> const std::vector<std::string>&;
 // same count as library paths
 auto get_common_config_paths() -> const std::vector<std::string>&;
 

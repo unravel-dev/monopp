@@ -100,6 +100,41 @@ auto get_common_library_names() -> const std::vector<std::string>&
 #endif
 	return names;
 }
+
+auto get_common_library_names_for_deploy() -> const std::vector<std::string>&
+{
+	static const std::vector<std::string> names	= {
+	
+#ifndef _WIN32
+	"libmono-2.0.so",
+	"libmono-2.0.so.1",
+
+	"libmonosgen-2.0.so",
+	"libmonosgen-2.0.so.1",
+
+	"libmono-native.so",
+	"libmono-native.so.0",
+
+	"libMonoPosixHelper.so",
+	"libMonoSupportW.so",
+
+	"libmono-llvm.so",
+	"libmono-llvm.so.0",
+
+	"libmono-btls-shared.so",
+
+	"libmono-profiler-aot.so",
+	"libmono-profiler-aot.so.0",
+
+	"libmono-profiler-coverage.so",
+	"libmono-profiler-coverage.so.0",
+
+	"libmono-profiler-log.so",
+	"libmono-profiler-log.so.0"
+#endif
+	};
+	return names;
+}
 auto get_common_library_paths() -> const std::vector<std::string>&
 {
 	static const std::vector<std::string> paths{"C:/Program Files/Mono/lib", "/usr/lib64", "/usr/lib",
