@@ -72,4 +72,20 @@ protected:
 	non_owning_ptr<MonoObject> object_ = nullptr;
 };
 
+template<typename T>
+auto mono_box_value(const T& value, const mono_type& type) -> mono_object
+{
+	static_assert(is_mono_valuetype<T>::value, "Should not pass here for non-value types");
+	void* ptr = const_cast<T*>(std::addressof(value));
+	MonoObject* object = mono_value_box(mono_domain_get(), type.get_internal_ptr(), ptr);
+	return mono_object(object, type);
+}
+
+template<typename T>
+auto mono_unbox_value(const mono_object& obj) -> T
+{
+	static_assert(is_mono_valuetype<T>::value, "Should not pass here for non-value types");
+	void* ptr = mono_object_unbox(obj.get_internal_ptr());
+	return *reinterpret_cast<T*>(ptr);
+}
 } // namespace mono
