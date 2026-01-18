@@ -31,8 +31,6 @@ public:
 	static auto get_managed_object_as(const mono_object& mono_obj) -> auto&;
 
 private:
-	mono_object managed_object_;
-	mono_gc_handle gc_handle_;
 	mono_scoped_gc_handle gc_scoped_handle_;
 };
 

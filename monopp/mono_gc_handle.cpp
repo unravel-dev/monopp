@@ -7,20 +7,32 @@ END_MONO_INCLUDE
 namespace mono
 {
 
-void mono_gc_handle::lock()
+void mono_scoped_gc_handle::lock(const mono_object& obj)
 {
 	assert(handle_ == 0);
-	if(object_)
+	if(obj.valid())
 	{
-		handle_ = mono_gchandle_new(object_, 1);
+		handle_ = mono_gchandle_new(obj.get_internal_ptr(), 1);
 	}
 }
 
-void mono_gc_handle::unlock()
+void mono_scoped_gc_handle::unlock()
 {
-	assert(handle_ != 0);
-	mono_gchandle_free(handle_);
+	if(handle_ != 0)
+	{
+		mono_gchandle_free(handle_);
+
+	}
 	handle_ = 0;
+}
+
+auto mono_scoped_gc_handle::get_object() const -> mono_object
+{
+	if(handle_ == 0)
+	{
+		return mono_object();
+	}
+	return mono_object(mono_gchandle_get_target(handle_));
 }
 
 auto gc_get_heap_size() -> int64_t

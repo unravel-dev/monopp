@@ -38,11 +38,10 @@ void object::initialize_type_field(const mono_assembly& assembly)
 object::~object() = default;
 
 object::object(mono_object obj)
-	: managed_object_(std::move(obj))
-	, gc_handle_(managed_object_.get_internal_ptr())
-	, gc_scoped_handle_(gc_handle_)
+	: gc_scoped_handle_(obj)
 {
-	assert(managed_object_.get_type().is_derived_from(*get_object_type()) &&
+	auto pinned = gc_scoped_handle_.get_object();
+	assert(pinned.get_type().is_derived_from(*get_object_type()) &&
 		   "Mono wrapper classes must inherit from Monopp.Core.NativeObject.");
 
 	// Give mono the ownership of the this pointer.
@@ -50,7 +49,7 @@ object::object(mono_object obj)
 	// delete the pointer
 	const auto& field = *object::get_native_object_field();
 	auto mutable_field = make_field_invoker<object*>(field);
-	mutable_field.set_value(managed_object_, this);
+	mutable_field.set_value(pinned, this);
 }
 
 auto object::get_object_type() -> std::unique_ptr<mono_type>&

@@ -49,20 +49,6 @@ public:
 		return *reinterpret_cast<T*>(ptr);
 	}
 
-	void set_value(MonoObject* object, const mono_type& type)
-    {
-        object_ = object;
-        type_ = type;
-    }
-
-	void set_value(MonoObject* object)
-    {
-        object_ = object;
-		if(object_)
-		{
-			type_ = mono_type(mono_object_get_class(object));
-		}    
-	}
 protected:
 
 

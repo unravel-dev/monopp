@@ -148,19 +148,18 @@ public:
 	}
 
 	template<typename VectorLike = std::vector<T>>
-	void set(const VectorLike& vec, const mono_type& element_type)
+	void set(const VectorLike& vec, const mono_type& element_type, bool create_missing_elements = false)
 	{
 		if(!valid())
 		{
-			auto new_list = create_list(mono_domain::get_current_domain(), element_type);
-			set_value(new_list.get_internal_ptr());
+			return;
 		}
 
 		clear();
 		for(auto& item : vec)
 		{
 			auto item_to_add = item;
-			if(!item_to_add.valid())
+			if(create_missing_elements && !item_to_add.valid())
 			{
 				item_to_add = element_type.new_instance();
 			}

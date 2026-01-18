@@ -266,18 +266,17 @@ public:
 	}
 
 	template<typename VectorLike = std::vector<mono_object>>
-	void set(const VectorLike& vec, const mono_type& element_type)
+	void set(const VectorLike& vec, const mono_type& element_type, bool create_missing_elements = false)
 	{
 		if(!valid())
 		{
-			auto new_array = create_array(mono_domain::get_current_domain(), element_type, vec.size());
-			set_value(reinterpret_cast<MonoObject*>(new_array));
+			return;
 		}
 		
 		for(size_t i = 0; i < vec.size(); i++)
 		{
 			auto item = vec[i];
-			if(!item.valid())
+			if(create_missing_elements && !item.valid())
 			{
 				item = element_type.new_instance();
 			}

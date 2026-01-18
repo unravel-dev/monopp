@@ -756,6 +756,10 @@ auto mono_type::get_hash(const char* name) -> size_t
 
 auto mono_type::get_hash() const -> size_t
 {
+	if(!class_)
+	{
+		return 0;
+	}
 	if(meta_)
 	{
 		return meta_->hash;
