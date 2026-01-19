@@ -35,6 +35,8 @@ public:
 	auto get_type(const std::string& name) const -> mono_type;
 	auto get_type(const std::string& name_space, const std::string& name) const -> mono_type;
 
+	auto get_name() const -> std::string;
+
 	auto get_internal_ptr() const -> MonoDomain*;
 
 private:

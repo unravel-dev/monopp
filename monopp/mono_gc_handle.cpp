@@ -13,6 +13,7 @@ void mono_scoped_gc_handle::lock(const mono_object& obj)
 	if(obj.valid())
 	{
 		handle_ = mono_gchandle_new(obj.get_internal_ptr(), 1);
+		domain_version_ = reinterpret_cast<intptr_t>(mono_domain_get());
 	}
 }
 
@@ -21,7 +22,7 @@ void mono_scoped_gc_handle::unlock()
 	if(handle_ != 0)
 	{
 		mono_gchandle_free(handle_);
-
+		domain_version_ = 0;
 	}
 	handle_ = 0;
 }

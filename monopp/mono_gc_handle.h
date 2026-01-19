@@ -40,6 +40,11 @@ public:
 		return handle_;
 	}
 
+	auto get_domain_version() const -> intptr_t
+	{
+		return domain_version_;
+	}
+
 	auto get_object() const -> mono_object;
 
 	/// <summary>
@@ -53,6 +58,7 @@ public:
 
 private:
 	uint32_t handle_ = 0;
+	intptr_t domain_version_ = 0;
 };
 
 using mono_object_pinned = mono_scoped_gc_handle;

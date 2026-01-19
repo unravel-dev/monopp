@@ -180,5 +180,10 @@ auto mono_domain::get_type(const std::string& name_space, const std::string& nam
 	return {};
 }
 
+auto mono_domain::get_name() const -> std::string
+{
+	return mono_domain_get_friendly_name(domain_);
+}
+
 
 } // namespace mono
