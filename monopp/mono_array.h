@@ -114,7 +114,7 @@ public:
 				reinterpret_cast<uint8_t*>(mono_array_addr_with_size(get_internal_array(), 1, 0));
 
 			T value{};
-			std::memcpy(&value, byte_ptr + index * sizeof(T), sizeof(T));
+			std::memcpy((void*)&value, byte_ptr + index * sizeof(T), sizeof(T));
 			return value;
 		}
 		else
