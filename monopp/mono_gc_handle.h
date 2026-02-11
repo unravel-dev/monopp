@@ -125,6 +125,19 @@ auto with_pinned(const mono_object& obj, Fn&& fn) -> decltype(fn(mono_object()))
   return fn(pinned.get_object());
 }
 
+/// Pin all elements in a vector of mono_objects to prevent GC collection/movement.
+/// Returns a vector of pinned handles that must be kept alive while the elements are in use.
+inline auto pin_vector_elements(const std::vector<mono_object>& elements) -> std::vector<mono_object_pinned_ptr>
+{
+	std::vector<mono_object_pinned_ptr> pins;
+	pins.reserve(elements.size());
+	for(const auto& elem : elements)
+	{
+		pins.push_back(make_object_pinned(elem));
+	}
+	return pins;
+}
+
 auto gc_get_heap_size() -> int64_t;
 auto gc_get_used_size() -> int64_t;
 void gc_collect();
