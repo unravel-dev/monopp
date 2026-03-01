@@ -1,2 +1,4 @@
 add_subdirectory(monort)
-add_subdirectory(managed)
+if(BUILD_MONOPP_MONORT_MANAGED)
+	add_subdirectory(managed)
+endif()
