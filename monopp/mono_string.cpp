@@ -1,6 +1,10 @@
 #include "mono_string.h"
 #include "mono_domain.h"
+
+DIAG_PUSH_PRAGMA
+DIAG_DISABLE_WARNING(conversion, character-conversion, 4244)
 #include "utf8/unchecked.h"
+DIAG_POP_PRAGMA
 namespace mono
 {
 
