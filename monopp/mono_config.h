@@ -26,7 +26,9 @@ using non_owning_ptr = T*;
 #define DIAG_PRAGMA(compiler, x) DIAG_DO_PRAGMA(compiler diagnostic x)
 #endif
 #if defined(__clang__)
-#define DIAG_PUSH_PRAGMA DIAG_PRAGMA(clang, push)
+#define DIAG_PUSH_PRAGMA                                                                                     \
+	DIAG_PRAGMA(clang, push)                                                                                 \
+	DIAG_PRAGMA(clang, ignored "-Wunknown-warning-option")
 #define DIAG_DISABLE_WARNING(gcc_unused, clang_option, msvc_unused)                                          \
 	DIAG_PRAGMA(clang, ignored DIAG_JOINSTR(-W, clang_option))
 #define DIAG_POP_PRAGMA DIAG_PRAGMA(clang, pop)
@@ -36,7 +38,9 @@ using non_owning_ptr = T*;
 	DIAG_PRAGMA(msvc, disable : msvc_errorcode)
 #define DIAG_POP_PRAGMA DIAG_PRAGMA(msvc, pop)
 #elif defined(__GNUC__)
-#define DIAG_PUSH_PRAGMA DIAG_PRAGMA(GCC, push)
+#define DIAG_PUSH_PRAGMA                                                                                     \
+	DIAG_PRAGMA(GCC, push)                                                                                   \
+	DIAG_PRAGMA(GCC, ignored "-Wpragmas")
 #define DIAG_DISABLE_WARNING(gcc_option, clang_unused, msvc_unused)                                          \
 	DIAG_PRAGMA(GCC, ignored DIAG_JOINSTR(-W, gcc_option))
 #define DIAG_POP_PRAGMA DIAG_PRAGMA(GCC, pop)
